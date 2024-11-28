@@ -1,0 +1,57 @@
+- hosts: proxmox_host
+  become: false
+  gather_facts: false
+  vars_files:
+    - ansible_secrets.yml  # File containing api_token_secret and api_token_id
+
+  vars:
+    api_user: "ansible@pam"
+    node: "jaro"
+    ceph_vms:
+      - { vmid: 101, name: "ceph-cluster1", storage: "ceph-storage" }
+      - { vmid: 102, name: "ceph-cluster2", storage: "ceph-storage" }
+      - { vmid: 103, name: "ceph-cluster3", storage: "ceph-storage" }
+    docker_vm:
+      vmid: 104
+      name: "docker-host"
+      storage: "local-zfs"  # Or "local-lvm" if you prefer LVM for Docker
+      disk_size: 8G
+      template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+
+  tasks:
+    # Loop through and provision Ceph VMs using RBD storage
+    - name: Provision Ceph VM
+      proxmox_kvm:
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        api_host: "{{ ansible_host }}"
+        node: "{{ node }}"
+        vmid: "{{ item.vmid }}"
+        name: "{{ item.name }}"
+        cores: 2
+        memory: 2048
+        net:
+          net0: virtio,bridge=vmbr0
+        ostype: l26
+        kvm: false
+        state: started
+      loop: "{{ ceph_vms }}"
+
+    # Provision Docker VM using ZFS or LVM storage (choose one)
+    - name: Provision Docker VM
+      proxmox_kvm:
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        api_host: "{{ ansible_host }}"
+        node: "{{ node }}"
+        vmid: "{{ docker_vm.vmid }}"
+        name: "{{ docker_vm.name }}"
+        cores: 2
+        memory: 2048
+        net:
+          net0: virtio,bridge=vmbr0
+        ostype: l26
+        kvm: false
+        state: started
