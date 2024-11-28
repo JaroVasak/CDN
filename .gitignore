@@ -1,0 +1,2 @@
+# Ignore Ansible vault file
+ansible_secrets.yml
