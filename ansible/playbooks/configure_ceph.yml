@@ -1,0 +1,27 @@
+- name: Configure Ceph Cluster
+  hosts: all  # Runs on all dynamically added hosts for the Ceph cluster
+  gather_facts: yes
+  tasks:
+    - name: Install Ceph packages
+      apt:
+        name: ceph
+        state: present
+        update_cache: yes
+
+    - name: Create initial monitor on the first node
+      command: ceph-deploy new ceph-node1
+      when: inventory_hostname == "ceph-node1"
+
+    - name: Add OSDs to the cluster
+      command: ceph-deploy osd create {{ inventory_hostname }}
+
+    - name: Start Ceph services
+      service:
+        name: ceph
+        state: started
+        enabled: true
+
+
+#Notes:
+#This assumes a basic Ceph setup using ceph-deploy. 
+#For a more advanced configuration, you can use modules like community.general.ceph_key or community.general.ceph_mds.
