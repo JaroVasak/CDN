@@ -1,2 +1,5 @@
+vars/*.env
+!vars/bash.env.example
+
 # Ignore Ansible vault file
-ansible_secrets.yml
+ansible/ansible_secrets.yml
