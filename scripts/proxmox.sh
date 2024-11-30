@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Step 0: Define Parameters as Variables at the Top of the Script
+# Step 0: Define  Network Parameters as Variables
 ADDRESS="192.168.183.190"
 GATEWAY="192.168.183.1"
 NETMASK="255.255.255.0"
@@ -52,7 +52,7 @@ ss -tunelp | grep 8006
 # Comment out Proxmox Enterprise Repository line
 sudo sed -i 's|^deb https://enterprise.proxmox.com|#deb https://enterprise.proxmox.com|' /etc/apt/sources.list.d/pve-enterprise.list
 
-# Step 6: Install proxmoxer using pip
+# Step 6: Install proxmoxer
 echo "Installing proxmoxer..."
 sudo sudo apt install python3-proxmoxer -y
 

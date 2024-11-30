@@ -64,7 +64,7 @@ EOF
 
 # Configure Ansible settings to avoid warnings and key checking
 echo "Configuring Ansible settings..."
-cat <<EOF > ansible.cfg
+cat <<EOF > /ansible/ansible.cfg
 [defaults]
 interpreter_python=auto_silent
 host_key_checking=False
