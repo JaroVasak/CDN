@@ -1,13 +1,40 @@
-- name: Configure Docker Node
-  hosts: docker-node  # Refers to the dynamically added Docker node
-  gather_facts: yes
-  become: yes
+- name: Configure Docker
+  hosts: docker
+  become: true
+  vars:
+    docker_compose_version: "2.15.1"  # Replace with the desired version
   tasks:
+    - name: Install required dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+
+    - name: Add Docker's official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: 'deb [arch=amd64] https://download.docker.com/linux/debian/dists/bookworm/stable/'
+        state: present
+
     - name: Install Docker
       apt:
-        name: docker.io
+        name: docker-ce
         state: present
         update_cache: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-$(uname -s)-$(uname -m)"
+        dest: "/usr/local/bin/docker-compose"
+        mode: 'u+x'
 
     - name: Ensure Docker service is running
       service:
@@ -15,10 +42,8 @@
         state: started
         enabled: true
 
-    - name: Deploy an Nginx container
-      community.docker.docker_container:
-        name: nginx_container
-        image: nginx:latest
-        state: started
-        ports:
-          - "80:80"
+    - name: Add ansible user to docker group
+      user:
+        name: ansible
+        groups: docker
+        append: yes
