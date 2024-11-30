@@ -2,21 +2,8 @@
   become: false
   gather_facts: false
   vars_files:
-    - ansible_secrets.yml  # File containing api_token_secret and api_token_id
-
-  vars:
-    api_user: "ansible@pam"
-    node: "jaro"
-    ceph_vms:
-      - { vmid: 101, name: "ceph-cluster1", storage: "ceph-storage" }
-      - { vmid: 102, name: "ceph-cluster2", storage: "ceph-storage" }
-      - { vmid: 103, name: "ceph-cluster3", storage: "ceph-storage" }
-    docker_vm:
-      vmid: 104
-      name: "docker-host"
-      storage: "local-zfs"  # Or "local-lvm" if you prefer LVM for Docker
-      disk_size: 8G
-      template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+    - vars/ansible_secrets.yml  # File containing api_token_secret and api_token_id
+    - vars/provision_vms.yml
 
   tasks:
     # Loop through and provision Ceph VMs using RBD storage
