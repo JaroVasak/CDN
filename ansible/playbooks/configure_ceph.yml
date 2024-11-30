@@ -1,19 +1,42 @@
 - name: Configure Ceph Cluster
-  hosts: all  # Runs on all dynamically added hosts for the Ceph cluster
-  gather_facts: yes
+  hosts: ceph_nodes
+  become: true
+  vars:
+    ceph_release: "octopus"
   tasks:
     - name: Install Ceph packages
       apt:
-        name: ceph
+        name: "ceph, ceph-common, ceph-fs-common"
         state: present
         update_cache: yes
 
-    - name: Create initial monitor on the first node
-      command: ceph-deploy new ceph-node1
-      when: inventory_hostname == "ceph-node1"
+    - name: Configure Ceph repository
+      apt_repository:
+        repo: "deb http://download.ceph.com/debian-{{ ceph_release }}/ {{ ansible_lsb.codename }} main"
+        state: present
 
-    - name: Add OSDs to the cluster
-      command: ceph-deploy osd create {{ inventory_hostname }}
+    - name: Install Ceph monitor and OSD
+      command: ceph-deploy new {{ inventory_hostname }}
+      args:
+        creates: /etc/ceph/ceph.conf
+
+    - name: Deploy the monitor
+      command: ceph-deploy mon create-initial
+      args:
+        chdir: /root
+
+    - name: Deploy the OSDs
+      command: ceph-deploy osd create --data /dev/sdb {{ inventory_hostname }}
+      args:
+        chdir: /root
+
+    - name: Copy ceph config to all nodes
+      copy:
+        src: /etc/ceph/ceph.conf
+        dest: /etc/ceph/ceph.conf
+        owner: root
+        group: root
+        mode: 0644
 
     - name: Start Ceph services
       service:
@@ -21,7 +44,6 @@
         state: started
         enabled: true
 
-
-#Notes:
-#This assumes a basic Ceph setup using ceph-deploy. 
-#For a more advanced configuration, you can use modules like community.general.ceph_key or community.general.ceph_mds.
+    - name: Ensure Prometheus integration
+      # Task to set up Prometheus metrics endpoint for monitoring
+      # Add configurations specific to Prometheus integration
