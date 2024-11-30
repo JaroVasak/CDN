@@ -113,7 +113,7 @@ Add sensitive or environment-specific files to `.gitignore` to prevent accidenta
 ```plaintext
 vars/*.env
 !vars/bash.env.example
-ansible/ansible_secrets.yml
+ansible/vars/ansible_secrets.yml
 ```
 
 ---
