@@ -1,78 +1,126 @@
-# Project Name
+# Project: CDN Infrastructure Setup
 
-## Description
-This project is designed to manage virtual machine (VM) creation, provisioning, and cloud initialization using Ansible and shell scripts. It includes playbooks for automation, configuration management, and setup of Debian cloud-init templates, along with supporting Bash scripts.
+## Overview
 
-## Folder Structure
-```
-project-name/
-|
-├── ansible/                          # Main directory for Ansible files
-│   ├── inventory.yml                 # Inventory file
-│   ├── ansible_secrets.yml           # File for storing secrets (secure it appropriately)
-│   │
-│   ├── playbooks/                    # Directory for main playbooks
-│   │   ├── configure_ceph.yml        # Playbook for configuring ceph cluster
-│   │   ├── configure_docker.yml      # Playbook for configuring docker host
-│   │   └── provision_vms.yml         # Playbook for provisioning VMs
-│
-├── scripts/                          # Directory for Bash scripts
-│   ├── ansible.sh                    # Bash script for running Ansible commands
-│   ├── proxmox_onboard.sh            # Bash script for onboarding Proxmox systems
-│   └── debian_template.sh            # Bash script for setting up Debian with cloud-init
-```
+This project automates the provisioning of a Content Delivery Network (CDN) infrastructure using Proxmox and Ansible. It includes scripts for setting up Proxmox, creating Debian templates, and configuring Ansible for managing virtual machines and services like Ceph and Docker.
+
+---
 
 ## Prerequisites
-- Ansible installed on the control machine.
-- Proxmox environment accessible for VM operations.
-- Debian-based templates available for cloud-init setup.
+
+- A host machine (virtual or bare metal) with Debian installed, capable of running Proxmox.
+- Basic understanding of Bash scripting and Ansible.
+- An SSH key pair for Ansible configuration.
+
+---
+
+## Project Structure
+
+```
+CDN/
+├── ansible/                # Contains Ansible configuration and playbooks
+│   ├── playbooks/          # Playbooks for provisioning and configuring services
+│   ├── ansible_secrets.yml # Placeholder for sensitive Ansible variables
+│   └── inventory.yml       # Ansible inventory file
+├── scripts/                # Bash scripts for automating setup tasks
+│   ├── ansible.sh          # Installs and configures Ansible on the host
+│   ├── debian-template.sh  # Creates a Debian cloud-init template on Proxmox
+│   └── proxmox.sh          # Installs and configures Proxmox on a Debian machine
+├── vars/                   # Variables for scripts and Ansible
+│   ├── bash.env            # Environment variables for Bash scripts
+│   └── bash.env.example    # Template for environment variables
+├── .gitignore              # Git ignore file for excluding sensitive data
+└── README.md               # Project documentation
+```
+
+---
 
 ## Usage
 
-### Ansible Playbooks
-1. **VM Creation**
-   ```bash
-   ansible-playbook ansible/playbooks/create_vm.yml
-   ```
+### 1. Setup Proxmox
 
-2. **Provision VMs**
-   ```bash
-   ansible-playbook ansible/playbooks/provision_vms.yml
-   ```
+Run the `proxmox.sh` script to install and configure Proxmox on a Debian machine.
 
-3. **Cloud Initialization**
-   ```bash
-   ansible-playbook ansible/playbooks/cloud_init.yml
-   ```
+```bash
+./scripts/proxmox.sh
+```
 
-### Shell Scripts
-1. **Run Ansible Commands**
-   ```bash
-   ./scripts/ansible.sh
-   ```
+**Note:** Update the network details (IP, gateway, and mask) in the `vars/bash.env` file before running the Bash scripts (`proxmox.sh`, `debian-template.sh`, `ansible.sh`).
 
-2. **Onboard Proxmox Systems**
-   ```bash
-   ./scripts/proxmox_onboard.sh
-   ```
+### 2. Create a Debian Template
 
-3. **Setup Debian Cloud-Init**
-   ```bash
-   ./scripts/setup_debian_cloudinit.sh
-   ```
+Run the `debian-template.sh` script to create a cloud-init template for Debian. Ensure the required variables are set in `vars/bash.env`.
 
-4. **Create Virtual Machines**
-   ```bash
-   ./scripts/create_vm.sh
-   ```
+```bash
+./scripts/debian-template.sh
+```
 
-## Security Notes
-- Ensure `ansible_secrets.yml` is properly secured and excluded from version control.
-- Use appropriate access controls and encryption for sensitive data.
+### 3. Setup Ansible
+
+Run the `ansible.sh` script to install Ansible and configure it for use with Proxmox. Ensure the required variables are set in `vars/bash.env`.
+
+```bash
+./scripts/ansible.sh
+```
+
+### 4. Provision Virtual Machines
+
+Use the `provision_vms.yml` playbook to provision virtual machines for Ceph and Docker.
+
+```bash
+ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
+```
+
+---
+
+## Configuration Files
+
+### Bash Variables (`vars/bash.env`)
+
+Stores environment variables for Bash scripts. An example file `bash.env.example` is provided:
+
+```bash
+PROXMOX_HOST=192.168.1.10
+NETWORK_GATEWAY=192.168.1.1
+NETWORK_MASK=255.255.255.0
+```
+
+To use, copy the example file and update it with your details:
+
+```bash
+cp vars/bash.env.example vars/bash.env
+nano vars/bash.env
+```
+
+Load these variables in scripts using `source vars/bash.env`.
+
+### Ansible Secrets (`ansible/ansible_secrets.yml`)
+
+Placeholder for sensitive variables used in Ansible playbooks. Ensure this file is encrypted using `ansible-vault` if it contains sensitive information.
+
+---
+
+## .gitignore
+
+Add sensitive or environment-specific files to `.gitignore` to prevent accidental commits.
+
+```plaintext
+vars/*.env
+!vars/bash.env.example
+ansible/ansible_secrets.yml
+```
+
+---
+
+## Notes
+
+- Ensure all dependencies are installed on the host machine before running scripts (e.g., `bash`, `ssh`, `ansible`).
+- Review each script and playbook to adapt it to your specific environment and requirements.
+- Test in a non-production environment before deploying to production.
+
+---
 
 ## License
-This project is open-source. Feel free to modify and use as needed.
 
-## Contributing
-Contributions are welcome! Please create a pull request or submit an issue if you have suggestions or improvements.
+This project is licensed under the MIT License. See `LICENSE` for details.
 
