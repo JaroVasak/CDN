@@ -1,16 +1,6 @@
 #!/bin/bash
-
-# Variables for repeatable values
-VM_ID=9110
-VM_NAME="debian12-cloud"
-MEMORY=2048
-BRIDGE="vmbr0"
-DISK_SIZE="6G"
-STORAGE="jaro-zfs"
-SSH_KEY_PATH="/root/ansible-key.pub"
-FORMAT=raw
-VMIMAGE=debian-12-genericcloud-amd64.$FORMAT
-CLOUD_IMAGE_URL="https://cloud.debian.org/images/cloud/bookworm/latest/$VMIMAGE"
+# Include bash variables
+source ../vars/bash.env
 
 # Download the Debian 12 Generic Cloud image (RAW format for ZFS compatibility)
 wget --trust-server-names -P /tmp -N "$CLOUD_IMAGE_URL"

@@ -1,9 +1,6 @@
 #!/bin/bash
-
-# Step 0: Define  Network Parameters as Variables
-ADDRESS="192.168.183.190"
-GATEWAY="192.168.183.1"
-NETMASK="255.255.255.0"
+# Include bash variables
+source ../vars/bash.env
 
 # Step 1: Update Repository Information
 echo "Updating package repository information..."
@@ -14,7 +11,7 @@ echo "Configuring static IP address..."
 sudo bash -c "cat > /etc/network/interfaces.d/enp0s3.cfg" <<EOF
 auto enp0s3
 iface enp0s3 inet static
-address $ADDRESS
+address $PROXMOX_HOST
 netmask $NETMASK
 gateway $GATEWAY
 dns-nameservers 8.8.8.8 8.8.4.4

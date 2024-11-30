@@ -4,28 +4,13 @@
 # Configuration Section
 # ----------------------------
 
-# Read the Proxmox Host IP from the command line
-if [ -z "$1" ]; then
-    echo "Usage: $0 <PROXMOX_HOST>"
-    exit 1
-fi
-PROXMOX_HOST="$1"
-
-# Variables
-ANSIBLE_USER="ansible"
-SSH_KEY_NAME="ansible-key"
-SSH_KEY_PATH="/home/$ANSIBLE_USER/.ssh/$SSH_KEY_NAME"
-INVENTORY_FILE="inventory.yml"
-ANSIBLE_PLAYBOOK="proxmox_onboard.yml"
-SUDOER_FILE="files/sudoer_ansible"
+# Include bash variables
+source ../vars/bash.env
 
 # Install prerequisites (wget and gpg)
 echo "Installing prerequisites (wget and gpg)..."
 sudo apt update
 sudo apt install wget gpg sshpass -y
-
-# Set the Ubuntu codename for Debian 12 (Bookworm)
-UBUNTU_CODENAME=jammy  # This is the correct codename for Debian 12 (Bookworm)
 
 # Add the Ansible PPA repository and its signing key
 echo "Adding Ansible PPA repository..."
