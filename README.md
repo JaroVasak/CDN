@@ -21,7 +21,10 @@ CDN/
 ├── ansible/                # Contains Ansible configuration and playbooks
 │   ├── playbooks/          # Playbooks for provisioning and configuring services
 │   ├── ansible_secrets.yml # Placeholder for sensitive Ansible variables
-│   └── inventory.yml       # Ansible inventory file
+│   ├── inventory.yml       # Ansible inventory file
+│   └── vars/               # Variables for Ansible playbooks
+│       ├── provision_vms.yml  # Variables for provisioning VMs
+│       └── ansible_secrets.yml # Encrypted secrets or placeholders
 ├── scripts/                # Bash scripts for automating setup tasks
 │   ├── ansible.sh          # Installs and configures Ansible on the host
 │   ├── debian-template.sh  # Creates a Debian cloud-init template on Proxmox
@@ -97,6 +100,9 @@ Load these variables in scripts using `source vars/bash.env`.
 ### Ansible Secrets (`ansible/ansible_secrets.yml`)
 
 Placeholder for sensitive variables used in Ansible playbooks. Ensure this file is encrypted using `ansible-vault` if it contains sensitive information.
+
+### Provisioning Variables (ansible/vars/provision_vms.yml)
+Contains the variables used by provision_vms.yml to create and manage VMs.
 
 ---
 
