@@ -19,19 +19,21 @@ This project automates the provisioning of a Content Delivery Network (CDN) infr
 ```
 CDN/
 ├── ansible/                # Contains Ansible configuration and playbooks
-│   ├── playbooks/          # Playbooks for provisioning and configuring services
-│   ├── ansible_secrets.yml # Placeholder for sensitive Ansible variables
-│   ├── inventory.yml       # Ansible inventory file
-│   └── vars/               # Variables for Ansible playbooks
-│       ├── provision_vms.yml  # Variables for provisioning VMs
-│       └── ansible_secrets.yml # Encrypted secrets or placeholders
+│   ├── ansible.cfg        # Configuration file for Ansible
+│   ├── files/             # Supporting files for playbooks (e.g., sudoer_ansible)
+│   ├── inventory.yml      # Ansible inventory file
+│   ├── playbooks/         # Playbooks for provisioning and configuring services
+│   │   ├── configure_ceph.yml  # Playbook for configuring Ceph
+│   │   ├── configure_docker.yml # Playbook for configuring Docker
+│   │   ├── proxmox_onboard.yml   # Playbook for onboarding Proxmox
+│   │   └── provision_vms.yml    # Playbook for provisioning VMs
+│   ├── vars/               # Variables for Ansible playbooks
+│   │   ├── ansible_secrets.yml  # Encrypted secrets or placeholders
+│   │   └── provision_vms.yml    # Variables for provisioning VMs
 ├── scripts/                # Bash scripts for automating setup tasks
 │   ├── ansible.sh          # Installs and configures Ansible on the host
 │   ├── debian-template.sh  # Creates a Debian cloud-init template on Proxmox
 │   └── proxmox.sh          # Installs and configures Proxmox on a Debian machine
-├── vars/                   # Variables for scripts and Ansible
-│   ├── bash.env            # Environment variables for Bash scripts
-│   └── bash.env.example    # Template for environment variables
 ├── .gitignore              # Git ignore file for excluding sensitive data
 └── README.md               # Project documentation
 ```
@@ -45,7 +47,7 @@ CDN/
 Run the `proxmox.sh` script to install and configure Proxmox on a Debian machine.
 
 ```bash
-./scripts/proxmox.sh
+sudo ./scripts/proxmox.sh
 ```
 
 **Note:** Update the network details (IP, gateway, and mask) in the `vars/bash.env` file before running the Bash scripts (`proxmox.sh`, `debian-template.sh`, `ansible.sh`).
@@ -55,7 +57,7 @@ Run the `proxmox.sh` script to install and configure Proxmox on a Debian machine
 Run the `debian-template.sh` script to create a cloud-init template for Debian. Ensure the required variables are set in `vars/bash.env`.
 
 ```bash
-./scripts/debian-template.sh
+sudo ./scripts/debian-template.sh
 ```
 
 ### 3. Setup Ansible
@@ -63,7 +65,7 @@ Run the `debian-template.sh` script to create a cloud-init template for Debian. 
 Run the `ansible.sh` script to install Ansible and configure it for use with Proxmox. Ensure the required variables are set in `vars/bash.env`.
 
 ```bash
-./scripts/ansible.sh
+sudo ./scripts/ansible.sh
 ```
 
 ### 4. Provision Virtual Machines
@@ -73,6 +75,8 @@ Use the `provision_vms.yml` playbook to provision virtual machines for Ceph and 
 ```bash
 ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
 ```
+
+**Note:** Ensure you run this Ansible playbook with the appropriate permissions if needed, such as `sudo`.
 
 ---
 
@@ -97,12 +101,13 @@ nano vars/bash.env
 
 Load these variables in scripts using `source vars/bash.env`.
 
-### Ansible Secrets (`ansible/ansible_secrets.yml`)
+### Ansible Secrets (`ansible/vars/ansible_secrets.yml`)
 
 Placeholder for sensitive variables used in Ansible playbooks. Ensure this file is encrypted using `ansible-vault` if it contains sensitive information.
 
-### Provisioning Variables (ansible/vars/provision_vms.yml)
-Contains the variables used by provision_vms.yml to create and manage VMs.
+### Provisioning Variables (`ansible/vars/provision_vms.yml`)
+
+Contains the variables used by `provision_vms.yml` to create and manage VMs.
 
 ---
 

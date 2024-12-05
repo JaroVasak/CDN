@@ -1,6 +1,6 @@
 #!/bin/bash
 # Include bash variables
-source ../vars/bash.env
+source /home/ansible/CDN/vars/bash.env
 
 # Download the Debian 12 Generic Cloud image (RAW format for ZFS compatibility)
 wget --trust-server-names -P /tmp -N "$CLOUD_IMAGE_URL"

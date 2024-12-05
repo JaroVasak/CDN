@@ -1,6 +1,6 @@
 #!/bin/bash
 # Include bash variables
-source ../vars/bash.env
+source /home/ansible/CDN/vars/bash.env
 
 # Step 1: Update Repository Information
 echo "Updating package repository information..."
@@ -56,7 +56,7 @@ sudo sudo apt install python3-proxmoxer -y
 # Step 7: Remove the Linux Kernel
 echo "Removing default Debian kernel...update the name accordingly"
 sudo ls -lh /boot
-sudo apt remove linux-image-6.1.0-25-amd64 -y
+#sudo apt remove linux-image-6.1.0-25-amd64 -y
 
 # Step 8: Update GRUB
 echo "Updating GRUB configuration..."
