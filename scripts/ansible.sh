@@ -88,7 +88,7 @@ scp $SSH_KEY_PATH/$SSH_KEY_NAME.pub root@$PROXMOX_HOST:/root/$SSH_KEY_NAME.pub
 
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
-cat <<EOF > $ANSIBLE_FOLDER/$PROXMOX_ONBOARD
+cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
 - hosts: proxmox_host
   become: true
   tasks:
@@ -144,7 +144,7 @@ EOF
 # Run the playbook to configure the Proxmox host (using root user), use --user=root -k for the first setup
 echo "Running Ansible playbook to onboard Proxmox host as root..."
 echo "ansible-playbook $ANSIBLE_FOLDER/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root"
-ansible-playbook $ANSIBLE_FOLDER/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root
+ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root
 
 # ----------------------------
 # Test connection with Ansible user (after first playbook run)
