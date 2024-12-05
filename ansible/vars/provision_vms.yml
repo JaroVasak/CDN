@@ -1,9 +1,21 @@
 # Ansible Variables for provision_vms.yml
 
----
+# General Proxmox Configuration for creating template
+vm_id: 9110
+vm_name: "debian12-cloud"
+memory: 2048
+bridge: "vmbr0"
+disk_size: "6G"
+storage: "jaro-zfs"
+ssh_key_path: "/root/ansible-key.pub"
+format: raw
+vm_image: "debian-12-genericcloud-amd64.raw"
+cloud_image_url: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.raw"
 
-# provision_vms.yml variable file
+# Cloud-init configuration type
+citype: "cidata"
 
+# API Configuration
 api_user: "ansible@pam"
 node: "jaro"
 
