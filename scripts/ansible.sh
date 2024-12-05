@@ -5,7 +5,7 @@
 # ----------------------------
 
 # Include bash variables
-source ../vars/bash.env
+source /home/ansible/CDN/vars/bash.env
 
 # Install prerequisites (wget and gpg)
 echo "Installing prerequisites (wget and gpg)..."
@@ -38,18 +38,20 @@ ansible --version
 
 # Create an inventory file for Ansible to define the Proxmox host
 echo "Creating Ansible inventory file..."
-cat <<EOF > $INVENTORY_FILE
+cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
 all:
   hosts:
     proxmox_host:
       ansible_host: $PROXMOX_HOST
-      ansible_user: root
+      ansible_user: $ANSIBLE_USER
+      ansible_ssh_private_key_file: /home/$ANSIBLE_USER/.ssh/ansible-key
+      ansible_python_interpreter: /usr/bin/python3
 EOF
 
 
 # Configure Ansible settings to avoid warnings and key checking
 echo "Configuring Ansible settings..."
-cat <<EOF > /ansible/ansible.cfg
+cat <<EOF > $ANSIBLE_FOLDER/$ANSIBLE_CONFIG
 [defaults]
 interpreter_python=auto_silent
 host_key_checking=False
@@ -87,7 +89,7 @@ scp $SSH_KEY_PATH.pub root@$PROXMOX_HOST:/root/$SSH_KEY_NAME.pub
 
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
-cat <<EOF > $ANSIBLE_PLAYBOOK
+cat <<EOF > $ANSIBLE_FOLDER/$PROXMOX_ONBOARD
 - hosts: proxmox_host
   tasks:
     - name: Install sudo package
@@ -108,6 +110,7 @@ cat <<EOF > $ANSIBLE_PLAYBOOK
         key: "$(cat $SSH_KEY_PATH.pub)"
 
     - name: Add Ansible user to sudoers
+      become: true  
       copy:
         src: $SUDOER_FILE
         dest: /etc/sudoers.d/$ANSIBLE_USER
@@ -118,8 +121,8 @@ EOF
 
 # Create sudoers configuration for Ansible user
 echo "Creating sudoers configuration for $ANSIBLE_USER..."
-mkdir -p files
-cat <<EOF > files/sudoer_ansible
+mkdir -p $ANSIBLE_FOLDER/files
+cat <<EOF > $ANSIBLE_FOLDER/$SUDOER_FILE
 $ANSIBLE_USER ALL=(ALL) NOPASSWD: ALL
 EOF
 
@@ -140,7 +143,7 @@ EOF
 
 # Run the playbook to configure the Proxmox host (using root user)
 echo "Running Ansible playbook to onboard Proxmox host as root..."
-ansible-playbook $ANSIBLE_PLAYBOOK -i $INVENTORY_FILE --user=root -k
+ansible-playbook $ANSIBLE_FOLDER/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root -k
 
 # ----------------------------
 # Test connection with Ansible user (after first playbook run)
@@ -148,7 +151,7 @@ ansible-playbook $ANSIBLE_PLAYBOOK -i $INVENTORY_FILE --user=root -k
 
 # Test connection using the ansible user (SSH key authentication)
 echo "Testing connection with Ansible user..."
-ansible proxmox_host -m ping -i $INVENTORY_FILE --user=$ANSIBLE_USER --private-key $SSH_KEY_PATH
+ansible proxmox_host -m ping -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=$ANSIBLE_USER --private-key $SSH_KEY_PATH
 
 
 # ----------------------------
@@ -157,7 +160,7 @@ ansible proxmox_host -m ping -i $INVENTORY_FILE --user=$ANSIBLE_USER --private-k
 
 # Create an inventory file for Ansible to define the Proxmox host
 echo "Updating the inventory file with the new created user and ssh key..."
-cat <<EOF > $INVENTORY_FILE
+cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
 all:
   hosts:
     proxmox_host:
