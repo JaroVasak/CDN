@@ -24,7 +24,7 @@ CDN/
 │   │   ├── configure_ceph.yml  # Configure Ceph cluster
 │   │   ├── configure_docker.yml # Configure Docker environment
 │   │   ├── proxmox_onboard.yml   # Onboard Proxmox setup
-│   │   ├── create_debian_template.yml # Create a Debian template
+│   │   ├── create_debian_template.yml # Create a Debian template in proxmox
 │   │   └── provision_vms.yml    # Provision VMs for Ceph and Docker
 │   ├── vars/               # Variables for Ansible playbooks
 │   │   ├── ansible_secrets.yml  # Encrypted secrets (use Ansible Vault)
