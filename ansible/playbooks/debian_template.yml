@@ -1,0 +1,71 @@
+---
+- name: Provision and Configure Debian Template on Proxmox
+  hosts: proxmox
+  become: true
+  vars_files:
+    - vars/bash.env
+  tasks:
+    - name: Download the Debian 12 Generic Cloud image
+      ansible.builtin.shell: |
+        wget --trust-server-names -P /tmp -N "{{ cloud_image_url }}"
+      args:
+        chdir: /tmp
+
+    - name: Create a VM with the desired specifications
+      ansible.builtin.shell: |
+        qm create {{ vm_id }} --name {{ vm_name }} --memory {{ memory }} --net0 virtio,bridge={{ bridge }} --kvm 0
+
+    - name: Import the raw disk into the ZFS storage
+      ansible.builtin.shell: |
+        qm importdisk {{ vm_id }} /tmp/{{ vm_image }} {{ storage }} -format {{ format }}
+
+    - name: Attach the imported disk to the VM using VirtIO SCSI
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --scsihw virtio-scsi-pci --scsi0 {{ storage }}:vm-{{ vm_id }}-disk-0
+
+    - name: Set boot and display settings with serial console
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --boot c --bootdisk scsi0 --serial0 socket --vga serial0
+
+    - name: Resize the disk to the specified size
+      ansible.builtin.shell: |
+        qm resize {{ vm_id }} scsi0 {{ disk_size }}
+
+    - name: Configure network for DHCP
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --ipconfig0 ip=dhcp
+
+    - name: Create a cloud-init drive managed by Proxmox
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --ide2 {{ storage }}:cloudinit
+
+    - name: Configure SSH access using the public key
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --sshkey {{ ssh_key_path }}
+
+    - name: Specify the cloud-init configuration format
+      ansible.builtin.shell: |
+        qm set {{ vm_id }} --citype {{ citype }}
+        qm set {{ vm_id }} --ciuser debian
+
+    - name: Verify cloud-init configuration
+      ansible.builtin.shell: |
+        qm cloudinit dump {{ vm_id }} user
+        qm cloudinit dump {{ vm_id }} network
+
+    - name: Convert the VM to a template
+      ansible.builtin.shell: |
+        qm template {{ vm_id }}
+
+    - name: Clean up downloaded image file
+      ansible.builtin.file:
+        path: /tmp/{{ vm_image }}
+        state: absent
+
+    - name: Create a linked clone of the template
+      ansible.builtin.shell: |
+        qm clone {{ vm_id }} {{ clone_id }} --name {{ clone_name }}
+
+    - name: Start the cloned VM
+      ansible.builtin.shell: |
+        qm start {{ clone_id }}
