@@ -1,17 +1,12 @@
 # CDN Infrastructure Setup
 
 ## Overview
-This project aims to automate the setup of a CDN infrastructure using Proxmox, Debian templates, and Ansible. It provides scripts and playbooks to install and configure Proxmox, set up Ansible, create a Debian template for virtual machines, and provision VMs with services like Ceph and Docker.
+This project automates the setup of a CDN infrastructure using Proxmox, Debian templates, Ansible, and Docker. It includes scripts and playbooks to configure Proxmox, create Debian templates, provision VMs, and deploy monitoring tools like Prometheus and Grafana.
 
 ## Prerequisites
 - A Debian-based host machine capable of running Proxmox.
-- SSH key pair configured for Ansible access.
-- Ansible installed on the host machine.
-- Basic understanding of Bash scripting and Ansible playbooks.
-- Ensure the following packages are installed:
-  ```bash
-  sudo apt-get install ansible ssh
-  ```
+- Scripts included in this project will automatically install necessary tools like Ansible and SSH.
+- Basic understanding of Bash scripting and Ansible playbooks is helpful but not mandatory.
 
 ## Project Structure
 ```plaintext
@@ -29,6 +24,11 @@ CDN/
 │   ├── vars/               # Variables for Ansible playbooks
 │   │   ├── ansible_secrets.yml  # Encrypted secrets (use Ansible Vault)
 │   │   └── provision_vms.yml    # Variables for VM provisioning
+├── docker/                 # Docker configuration for services
+│   ├── monitoring/         # Monitoring setup
+│   │   ├── prometheus/     # Prometheus configuration
+│   │   │   └── prometheus.yml  # Prometheus scrape configuration
+│   │   └── docker-compose.yml  # Docker Compose file for monitoring stack
 ├── scripts/                # Bash scripts for initial setup tasks
 │   ├── ansible.sh          # Install and configure Ansible
 │   ├── proxmox.sh          # Install and configure Proxmox
@@ -69,6 +69,21 @@ Use the `provision_vms.yml` Ansible playbook to set up virtual machines for serv
 ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
 ```
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
+
+### 5. Deploy Monitoring Stack
+Navigate to the monitoring directory and start the Docker Compose stack:
+
+```bash
+cd docker/monitoring
+docker-compose up -d
+```
+
+Prometheus (port 9090)
+Grafana (port 3000)
+Node Exporter
+cAdvisor (port 8080)
+
+*Note*: Default Grafana credentials are set to admin / admin. Update the environment variables in the docker-compose.yml file if needed.
 
 ## Configuration
 
