@@ -5,7 +5,10 @@ This project automates the setup of a CDN infrastructure using Proxmox, Debian t
 
 ## Prerequisites
 - A Debian-based host machine capable of running Proxmox.
-- Scripts included in this project will automatically install necessary tools like Ansible and SSH.
+- Scripts included in this project will automatically install necessary tools like Ansible and SSH. Make the scripts executable by running:
+```bash
+chmod +x scripts/proxmox.sh scripts/ansible.sh
+```
 - Basic understanding of Bash scripting and Ansible playbooks is helpful but not mandatory.
 
 ## Project Structure
