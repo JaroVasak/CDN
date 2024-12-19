@@ -23,10 +23,9 @@ sudo systemctl restart networking
 # Step 3: Add the Proxmox Repository
 echo "Installing prerequisite packages..."
 sudo apt install curl software-properties-common apt-transport-https ca-certificates gnupg2 -y
-echo "Adding Proxmox repository..."
-echo "deb [arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/pve-install-repo.list
-echo "Downloading Proxmox VE repository key..."
-wget https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg -O /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg
+echo "Adding Proxmox repository and key..."
+curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor -o /usr/share/keyrings/proxmox.gpg
+echo "deb [signed-by=/usr/share/keyrings/proxmox.gpg arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/proxmox.list
 
 # Update the local APT cache and upgrade packages
 echo "Updating APT cache and upgrading packages..."
@@ -39,9 +38,36 @@ sudo apt install proxmox-default-kernel -y
 # Step 5: Install the Proxmox Packages
 echo "Installing Proxmox VE and additional packages..."
 sudo apt install proxmox-ve postfix open-iscsi chrony -y
+
 # Configure Postfix
+# Backup original configuration
+POSTFIX_CONFIG="/etc/postfix/main.cf"
+echo "Backing up existing configuration..."
+if [ -f "$POSTFIX_CONFIG" ]; then
+  sudo cp "$POSTFIX_CONFIG" "$POSTFIX_CONFIG.bak"
+fi
+
+# Apply new configuration
 echo "Configuring Postfix..."
-sudo dpkg-reconfigure postfix
+sudo bash -c "cat > $POSTFIX_CONFIG" <<EOF
+# Basic Postfix configuration
+myhostname = mail.example.com
+mydomain = example.com
+myorigin = \$mydomain
+mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain
+relayhost =
+inet_interfaces = loopback-only
+inet_protocols = ipv4
+EOF
+
+# Check the configuration for syntax errors
+echo "Verifying Postfix configuration..."
+sudo postconf -n
+
+# Restart Postfix service
+echo "Restarting Postfix..."
+sudo systemctl restart postfix
+
 # Confirm that Proxmox is installed and listening on port 8006
 echo "Confirming Proxmox installation..."
 ss -tunelp | grep 8006
