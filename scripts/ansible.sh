@@ -5,7 +5,7 @@
 # ----------------------------
 
 # Include bash variables
-source /home/ansible/CDN/vars/bash.env
+source $(dirname "$0")/../vars/bash.env
 
 # Install prerequisites (wget and gpg)
 echo "Installing prerequisites (wget and gpg)..."
