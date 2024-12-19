@@ -38,15 +38,40 @@ CDN/
 
 ## Usage
 
-### 1. Setup Proxmox
-Run the `proxmox.sh` script to install and configure Proxmox on a Debian host:
+### 1. Open the Project Folder
+Before running any scripts, navigate to the CDN folder where the scripts and configuration files are located:
+
+```bash
+cd /path/to/CDN
+```
+
+### 2. Update Configuration Variables
+Before running any scripts, make sure to configure the necessary variables.
+- Open and update the vars/bash.env file with your environment's details:
+
+```bash
+cp vars/bash.env.example vars/bash.env
+nano vars/bash.env
+```
+
+Example configuration in vars/bash.env:
+```bash
+PROXMOX_HOST=192.168.1.10
+NETWORK_GATEWAY=192.168.1.1
+NETWORK_MASK=255.255.255.0
+```
+
+- Important: Be sure to customize the network and Proxmox host details to match your setup.
+
+### 3. Setup Proxmox
+Once the configuration is complete, run the Proxmox setup script. This will install and configure Proxmox on your Debian host.
 
 ```bash
 sudo ./scripts/proxmox.sh
 ```
 *Note*: Update network details in `vars/bash.env` (e.g., IP, gateway, subnet) before running.
 
-### 2. Setup Ansible
+### 4. Install and Configure Ansible
 Run the `ansible.sh` script to install and configure Ansible on the host machine:
 
 ```bash
@@ -54,15 +79,15 @@ sudo ./scripts/ansible.sh
 ```
 *Note*: Ensure the variables in `vars/bash.env` are configured correctly.
 
-### 3. Create a Debian Template
+### 5. Create a Debian Template
 Use the `create_debian_template.yml` Ansible playbook to create a Debian cloud-init template:
 
 ```bash
 ansible-playbook ansible/playbooks/create_debian_template.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
 ```
-*Note*: Ensure that `vars/bash.env` has the correct configuration before running this playbook.
+*Note*: Ensure that `/ansible/vars/provision_vms.yml` has the correct configuration before running this playbook.
 
-### 4. Provision Virtual Machines
+### 6. Provision Virtual Machines
 Use the `provision_vms.yml` Ansible playbook to set up virtual machines for services like Ceph and Docker:
 
 ```bash
@@ -70,13 +95,15 @@ ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml --
 ```
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
 
-### 5. Deploy Monitoring Stack
-Navigate to the monitoring directory and start the Docker Compose stack:
-
+### 7. Deploy Monitoring Stack
+Navigate to the monitoring directory and deploy the monitoring stack using Docker Compose:
+ 
 ```bash
 cd docker/monitoring
 docker-compose up -d
 ```
+
+This will set up the Prometheus and Grafana monitoring stack, accessible at the following ports:
 
 Prometheus (port 9090)
 Grafana (port 3000)
