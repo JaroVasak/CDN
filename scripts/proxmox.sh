@@ -53,10 +53,31 @@ sudo sed -i 's|^deb https://enterprise.proxmox.com|#deb https://enterprise.proxm
 echo "Installing proxmoxer..."
 sudo sudo apt install python3-proxmoxer -y
 
-# Step 7: Remove the Linux Kernel
-echo "Removing default Debian kernel...update the name accordingly"
-sudo ls -lh /boot
-#sudo apt remove linux-image-6.1.0-25-amd64 -y
+# Step 7: Remove Old Linux Kernels
+echo "Removing old Linux kernels..."
+
+# List all installed kernels
+INSTALLED_KERNELS=$(dpkg --list | grep linux-image | awk '{print $2}')
+echo "Installed kernels:"
+echo "$INSTALLED_KERNELS"
+
+# Identify the Proxmox kernel (assumes it was the most recently installed)
+PROXMOX_KERNEL=$(dpkg --list | grep linux-image | grep proxmox | awk '{print $2}' | tail -n 1)
+if [ -z "$PROXMOX_KERNEL" ]; then
+    echo "Error: Proxmox kernel not found. Skipping kernel removal."
+else
+    echo "Proxmox kernel identified as: $PROXMOX_KERNEL"
+fi
+
+# Remove all kernels except the Proxmox kernel
+for KERNEL in $INSTALLED_KERNELS; do
+    if [[ $KERNEL != "$PROXMOX_KERNEL" ]]; then
+        echo "Removing old kernel: $KERNEL"
+        sudo apt remove --purge "$KERNEL" -y
+    else
+        echo "Keeping kernel: $KERNEL"
+    fi
+done
 
 # Step 8: Update GRUB
 echo "Updating GRUB configuration..."
