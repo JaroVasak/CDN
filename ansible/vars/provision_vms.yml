@@ -8,9 +8,9 @@ bridge: "vmbr0"
 disk_size: "6G"
 storage: "jaro-zfs"
 ssh_key_path: "/root/ansible-key.pub"
-format: raw
-vm_image: "debian-12-genericcloud-amd64.raw"
-cloud_image_url: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.raw"
+image_format: raw
+vm_image: "debian-12-genericcloud-amd64.$image_format"
+cloud_image_url: "https://cloud.debian.org/images/cloud/bookworm/$vm_image"
 
 # Cloud-init configuration type
 citype: "cidata"
