@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Error handling detection
+set -euo pipefail
+
 # Include bash variables
 source $(dirname "$0")/../vars/bash.env
 
@@ -23,11 +27,21 @@ sudo systemctl restart networking
 # Step 3: Add the Proxmox Repository
 echo "Installing prerequisite packages..."
 sudo apt install curl software-properties-common apt-transport-https ca-certificates gnupg2 -y
+
 echo "Adding Proxmox repository and key..."
 curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor -o /usr/share/keyrings/proxmox.gpg
+
 echo "deb [signed-by=/usr/share/keyrings/proxmox.gpg arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/proxmox.list
 
-# Update the local APT cache and upgrade packages
+# Fix broken dependencies
+echo "Fixing broken dependencies..."
+sudo apt --fix-broken install -y
+
+# Force installation of pve-firmware if there are conflicts
+echo "Forcing installation of pve-firmware..."
+sudo dpkg -i --force-overwrite /var/cache/apt/archives/pve-firmware_*.deb || true
+
+
 echo "Updating APT cache and upgrading packages..."
 sudo apt update && sudo apt full-upgrade -y
 
@@ -60,10 +74,6 @@ inet_interfaces = loopback-only
 inet_protocols = ipv4
 EOF
 
-# Check the configuration for syntax errors
-echo "Verifying Postfix configuration..."
-sudo postconf -n
-
 # Restart Postfix service
 echo "Restarting Postfix..."
 sudo systemctl restart postfix
@@ -89,34 +99,39 @@ echo "$INSTALLED_KERNELS"
 
 # Identify the Proxmox kernel (assumes it was the most recently installed)
 PROXMOX_KERNEL=$(dpkg --list | grep linux-image | grep proxmox | awk '{print $2}' | tail -n 1)
+
 if [ -z "$PROXMOX_KERNEL" ]; then
     echo "Error: Proxmox kernel not found. Skipping kernel removal."
 else
     echo "Proxmox kernel identified as: $PROXMOX_KERNEL"
+    # Remove all kernels except the Proxmox kernel
+    for KERNEL in $INSTALLED_KERNELS; do
+        if [[ $KERNEL != "$PROXMOX_KERNEL" ]]; then
+            echo "Removing old kernel: $KERNEL"
+            sudo apt remove --purge "$KERNEL" -y
+        else
+            echo "Keeping kernel: $KERNEL"
+        fi
+    done
 fi
-
-# Remove all kernels except the Proxmox kernel
-for KERNEL in $INSTALLED_KERNELS; do
-    if [[ $KERNEL != "$PROXMOX_KERNEL" ]]; then
-        echo "Removing old kernel: $KERNEL"
-        sudo apt remove --purge "$KERNEL" -y
-    else
-        echo "Keeping kernel: $KERNEL"
-    fi
-done
 
 # Step 8: Update GRUB
 echo "Updating GRUB configuration..."
 sudo update-grub
+
 # Remove os-prober to prevent listing VMs in boot menu
 echo "Removing os-prober..."
 sudo apt remove os-prober -y
 
-# Step 9: Reboot the system
+# Step 9: Post Installation configuration of Proxmox
+bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
+
+# Final Cleanup
+echo "Cleaning up..."
+sudo apt autoremove -y
+
+# Step 10: Reboot the system
 echo "Rebooting the system..."
 sudo reboot
-
-# Step 10: Post Installation configuration of Proxmox
-bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
 
 # Source: https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_12_Bookworm
