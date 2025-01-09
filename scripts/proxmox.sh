@@ -1,18 +1,25 @@
 #!/bin/bash
 
+#!/bin/bash
+# Ensure the script is run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root or with sudo" >&2
+    exit 1
+fi
+
 # Error handling detection
 set -euo pipefail
 
 # Include bash variables
-source $(dirname "$0")/../vars/bash.env
+source "$(dirname "$0")/../vars/bash.env"
 
 # Step 1: Update Repository Information
 echo "Updating package repository information..."
-sudo apt update
+apt update
 
 # Step 2: Configure static IP Address
 echo "Configuring static IP address..."
-sudo bash -c "cat > /etc/network/interfaces.d/enp0s3.cfg" <<EOF
+bash -c "cat > /etc/network/interfaces.d/enp0s3.cfg" <<EOF
 auto enp0s3
 iface enp0s3 inet static
 address $PROXMOX_HOST
@@ -22,72 +29,42 @@ dns-nameservers 8.8.8.8 8.8.4.4
 EOF
 
 # Restart the networking service
-sudo systemctl restart networking
+systemctl restart networking
 
 # Step 3: Add the Proxmox Repository
 echo "Installing prerequisite packages..."
-sudo apt install curl software-properties-common apt-transport-https ca-certificates gnupg2 -y
+apt install curl software-properties-common apt-transport-https ca-certificates gnupg2 -y
 
 echo "Adding Proxmox repository and key..."
 curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor -o /usr/share/keyrings/proxmox.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/proxmox.gpg arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/proxmox.list
 
-# Fix broken dependencies
-echo "Fixing broken dependencies..."
-sudo apt --fix-broken install -y
-
-# Force installation of pve-firmware if there are conflicts
-echo "Forcing installation of pve-firmware..."
-sudo dpkg -i --force-overwrite /var/cache/apt/archives/pve-firmware_*.deb || true
-
-
 echo "Updating APT cache and upgrading packages..."
-sudo apt update && sudo apt full-upgrade -y
+apt update && apt full-upgrade -y
 
 # Step 4: Install the Proxmox Kernel
 echo "Installing Proxmox kernel..."
-sudo apt install proxmox-default-kernel -y
+apt install proxmox-default-kernel -y
 
 # Step 5: Install the Proxmox Packages
 echo "Installing Proxmox VE and additional packages..."
-sudo apt install proxmox-ve postfix open-iscsi chrony -y
 
-# Configure Postfix
-# Backup original configuration
-POSTFIX_CONFIG="/etc/postfix/main.cf"
-echo "Backing up existing configuration..."
-if [ -f "$POSTFIX_CONFIG" ]; then
-  sudo cp "$POSTFIX_CONFIG" "$POSTFIX_CONFIG.bak"
-fi
-
-# Apply new configuration
-echo "Configuring Postfix..."
-sudo bash -c "cat > $POSTFIX_CONFIG" <<EOF
-# Basic Postfix configuration
-myhostname = mail.example.com
-mydomain = example.com
-myorigin = \$mydomain
-mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain
-relayhost =
-inet_interfaces = loopback-only
-inet_protocols = ipv4
-EOF
-
-# Restart Postfix service
-echo "Restarting Postfix..."
-sudo systemctl restart postfix
+# Preconfigure Postfix for unattended installation
+echo "postfix postfix/mailname string example.com" | sudo debconf-set-selections
+echo "postfix postfix/main_mailer_type string 'Internet Site'" | sudo debconf-set-selections
+apt install proxmox-ve postfix open-iscsi chrony -y
 
 # Confirm that Proxmox is installed and listening on port 8006
 echo "Confirming Proxmox installation..."
 ss -tunelp | grep 8006
 
 # Comment out Proxmox Enterprise Repository line
-sudo sed -i 's|^deb https://enterprise.proxmox.com|#deb https://enterprise.proxmox.com|' /etc/apt/sources.list.d/pve-enterprise.list
+sed -i 's|^deb https://enterprise.proxmox.com|#deb https://enterprise.proxmox.com|' /etc/apt/sources.list.d/pve-enterprise.list
 
 # Step 6: Install proxmoxer
 echo "Installing proxmoxer..."
-sudo sudo apt install python3-proxmoxer -y
+apt install python3-proxmoxer -y
 
 # Step 7: Remove Old Linux Kernels
 echo "Removing old Linux kernels..."
@@ -98,7 +75,7 @@ echo "Installed kernels:"
 echo "$INSTALLED_KERNELS"
 
 # Identify the Proxmox kernel (assumes it was the most recently installed)
-PROXMOX_KERNEL=$(dpkg --list | grep linux-image | grep proxmox | awk '{print $2}' | tail -n 1)
+PROXMOX_KERNEL=$(dpkg --list | grep proxmox-kernel | awk '{print $2}' | head -n 1)
 
 if [ -z "$PROXMOX_KERNEL" ]; then
     echo "Error: Proxmox kernel not found. Skipping kernel removal."
@@ -108,7 +85,7 @@ else
     for KERNEL in $INSTALLED_KERNELS; do
         if [[ $KERNEL != "$PROXMOX_KERNEL" ]]; then
             echo "Removing old kernel: $KERNEL"
-            sudo apt remove --purge "$KERNEL" -y
+            apt remove --purge "$KERNEL" -y
         else
             echo "Keeping kernel: $KERNEL"
         fi
@@ -117,21 +94,21 @@ fi
 
 # Step 8: Update GRUB
 echo "Updating GRUB configuration..."
-sudo update-grub
+update-grub
 
 # Remove os-prober to prevent listing VMs in boot menu
 echo "Removing os-prober..."
-sudo apt remove os-prober -y
+apt remove os-prober -y
 
 # Step 9: Post Installation configuration of Proxmox
 bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/misc/post-pve-install.sh)"
 
 # Final Cleanup
 echo "Cleaning up..."
-sudo apt autoremove -y
+apt autoremove -y
 
 # Step 10: Reboot the system
 echo "Rebooting the system..."
-sudo reboot
+reboot
 
 # Source: https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_12_Bookworm

@@ -1,16 +1,18 @@
 #!/bin/bash
 
-# ----------------------------
-# Configuration Section
-# ----------------------------
+# Ensure the script is run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root or with sudo" >&2
+    exit 1
+fi
 
 # Include bash variables
-source $(dirname "$0")/../vars/bash.env
+source "$(dirname "$0")/../vars/bash.env"
 
 # Install prerequisites (wget and gpg)
 echo "Installing prerequisites (wget and gpg)..."
-sudo apt update
-sudo apt install wget gpg sshpass -y
+apt update
+apt install wget gpg sshpass -y
 
 # Add the Ansible PPA repository and its signing key
 echo "Adding Ansible PPA repository..."
@@ -18,15 +20,15 @@ echo "Adding Ansible PPA repository..."
 if [ ! -f /usr/share/keyrings/ansible-archive-keyring.gpg ]; then
     # If it doesn't exist, download and dearmor the key
     echo "Downloading and dearmoring Ansible key..."
-    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=get&search=0x6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367" | sudo gpg --dearmour -o /usr/share/keyrings/ansible-archive-keyring.gpg
+    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=get&search=0x6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367" | gpg --dearmour -o /usr/share/keyrings/ansible-archive-keyring.gpg
 else
     echo "Ansible keyring already exists, skipping download."
 fi
-echo "deb [signed-by=/usr/share/keyrings/ansible-archive-keyring.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu $UBUNTU_CODENAME main" | sudo tee /etc/apt/sources.list.d/ansible.list
+echo "deb [signed-by=/usr/share/keyrings/ansible-archive-keyring.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu $UBUNTU_CODENAME main" | tee /etc/apt/sources.list.d/ansible.list
 
 # Update APT and install Ansible
 echo "Updating APT cache and installing Ansible..."
-sudo apt update && sudo apt install ansible -y
+apt update && apt install ansible -y
 
 # Verify the installation of Ansible
 echo "Verifying Ansible installation..."
@@ -88,6 +90,7 @@ scp $SSH_KEY_PATH/$SSH_KEY_NAME.pub root@$PROXMOX_HOST:/root/$SSH_KEY_NAME.pub
 
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
+mkdir -p $ANSIBLE_FOLDER/playbooks
 cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
 - hosts: proxmox_host
   become: true
