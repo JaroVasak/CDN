@@ -6,8 +6,8 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Include bash variables
-source "$(dirname "$0")/../vars/bash.env"
+# Source the environment variables
+source "$(dirname "$(realpath "$0")")/../vars/bash.env"
 
 # Install prerequisites (wget and gpg)
 echo "Installing prerequisites (wget and gpg)..."
@@ -66,16 +66,12 @@ EOF
 if [ ! -d $SSH_KEY_FOLDER ]; then
     echo "Creating .ssh directory for $ANSIBLE_USER at $SSH_KEY_FOLDER..."
     mkdir -p $SSH_KEY_FOLDER
-    chown $ANSIBLE_USER:$ANSIBLE_USER $SSH_KEY_FOLDER
-    chmod 700 $SSH_KEY_FOLDER
 fi
 
 # Generate SSH key for Ansible user if not already exists
 if [ ! -f $SSH_KEY_PATH ]; then
     echo "Generating SSH key for Ansible user..."
     ssh-keygen -t ed25519 -f $SSH_KEY_PATH -N "" -C "$ANSIBLE_USER@$PROXMOX_HOST"
-    chown $ANSIBLE_USER:$ANSIBLE_USER "$SSH_KEY_PATH" "$SSH_KEY_PATH.pub"
-    chmod 600 "$SSH_KEY_PATH"
     echo "SSH key generated at $SSH_KEY_PATH"
 else
     echo "SSH key already exists at $SSH_KEY_PATH"
@@ -90,7 +86,6 @@ ssh-copy-id -i $SSH_KEY_PATH.pub root@$PROXMOX_HOST
 
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
-mkdir -p $ANSIBLE_FOLDER/playbooks
 SSH_KEY_CONTENT=$(cat $SSH_KEY_PATH.pub)
 cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
 - hosts: proxmox
