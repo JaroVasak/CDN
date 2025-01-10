@@ -10,8 +10,8 @@ fi
 # Error handling detection
 set -euo pipefail
 
-# Include bash variables
-source "$(dirname "$0")/../vars/bash.env"
+# Source the environment variables
+source "$(dirname "$(realpath "$0")")/../vars/bash.env"
 
 # Step 1: Update Repository Information
 echo "Updating package repository information..."
