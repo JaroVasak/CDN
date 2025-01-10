@@ -86,7 +86,7 @@ sudo ./scripts/ansible.sh
 Use the `create_debian_template.yml` Ansible playbook to create a Debian cloud-init template:
 
 ```bash
-ansible-playbook ansible/playbooks/create_debian_template.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
+ansible-playbook ansible/playbooks/create_debian_template.yml -i ansible/inventory.yml
 ```
 *Note*: Ensure that `/ansible/vars/provision_vms.yml` has the correct configuration before running this playbook.
 
@@ -94,7 +94,7 @@ ansible-playbook ansible/playbooks/create_debian_template.yml -i ansible/invento
 Use the `provision_vms.yml` Ansible playbook to set up virtual machines for services like Ceph and Docker:
 
 ```bash
-ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml --user=ansible --private-key ~/.ssh/ansible-key
+ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml
 ```
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
 
