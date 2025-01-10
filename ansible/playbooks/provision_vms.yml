@@ -1,4 +1,4 @@
-- hosts: proxmox_host
+- hosts: proxmox
   become: false
   gather_facts: false
   vars_files:

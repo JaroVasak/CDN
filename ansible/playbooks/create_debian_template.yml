@@ -1,6 +1,6 @@
 ---
 - name: Provision and Configure Debian Template on Proxmox
-  hosts: proxmox_host
+  hosts: proxmox
   become: true
   vars_files:
     - ../vars/provision_vms.yml
@@ -36,7 +36,7 @@
 
     - name: Import the raw disk into the ZFS storage
       ansible.builtin.shell: |
-        qm importdisk {{ vm_id }} /tmp/{{ vm_image }} {{ storage }} -format {{ format }}
+        qm importdisk {{ vm_id }} /tmp/{{ vm_image }} {{ storage }} -format {{ image_format }}
       when: disk_check.rc != 0  # Skip if the disk is already imported
 
     - name: Attach the imported disk to the VM using VirtIO SCSI
