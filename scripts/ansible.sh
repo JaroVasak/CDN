@@ -35,7 +35,7 @@ echo "Verifying Ansible installation..."
 ansible --version
 
 # ----------------------------
-# Proxmox Configuration Section
+#  Ansible Configuration Section
 # ----------------------------
 
 # Create an inventory file for Ansible to define the Proxmox host
@@ -43,12 +43,12 @@ echo "Creating Ansible inventory file..."
 cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
 all:
   hosts:
-    proxmox_host:
+    proxmox:
       ansible_host: $PROXMOX_HOST
-      ansible_user: $ANSIBLE_USER
+      ansible_user: root
+      ansible_ssh_private_key_file: $SSH_KEY_PATH
       ansible_python_interpreter: /usr/bin/python3
 EOF
-
 
 # Configure Ansible settings to avoid warnings and key checking
 echo "Configuring Ansible settings..."
@@ -63,26 +63,26 @@ EOF
 # ----------------------------
 
 # Ensure the .ssh directory exists
-if [ ! -d $SSH_KEY_PATH ]; then
-    echo "Creating .ssh directory for $ANSIBLE_USER..."
-    mkdir -p $SSH_KEY_PATH
-    chown $ANSIBLE_USER:$ANSIBLE_USER $SSH_KEY_PATH
-    chmod 700 $SSH_KEY_PATH
+if [ ! -d $SSH_KEY_FOLDER ]; then
+    echo "Creating .ssh directory for $ANSIBLE_USER at $SSH_KEY_FOLDER..."
+    mkdir -p $SSH_KEY_FOLDER
+    chown $ANSIBLE_USER:$ANSIBLE_USER $SSH_KEY_FOLDER
+    chmod 700 $SSH_KEY_FOLDER
 fi
 
 # Generate SSH key for Ansible user if not already exists
-if [ ! -f $SSH_KEY_PATH/$SSH_KEY_NAME ]; then
+if [ ! -f $SSH_KEY_PATH ]; then
     echo "Generating SSH key for Ansible user..."
-    ssh-keygen -t ed25519 -f $SSH_KEY_PATH/$SSH_KEY_NAME -N "" -C "$ANSIBLE_USER@$PROXMOX_HOST"
-    chown $ANSIBLE_USER:$ANSIBLE_USER "$SSH_KEY_PATH/$SSH_KEY_NAME" "$SSH_KEY_PATH/$SSH_KEY_NAME.pub"
-    chmod 600 "$SSH_KEY_PATH/$SSH_KEY_NAME"
+    ssh-keygen -t ed25519 -f $SSH_KEY_PATH -N "" -C "$ANSIBLE_USER@$PROXMOX_HOST"
+    chown $ANSIBLE_USER:$ANSIBLE_USER "$SSH_KEY_PATH" "$SSH_KEY_PATH.pub"
+    chmod 600 "$SSH_KEY_PATH"
     echo "SSH key generated at $SSH_KEY_PATH"
 else
     echo "SSH key already exists at $SSH_KEY_PATH"
 fi
 
-# Copying the public key to Proxmox Host for creating Cloud Teplate (Vms)
-scp $SSH_KEY_PATH/$SSH_KEY_NAME.pub root@$PROXMOX_HOST:/root/$SSH_KEY_NAME.pub
+# Copying the public key to Proxmox Host
+ssh-copy-id -i $SSH_KEY_PATH.pub root@$PROXMOX_HOST
 
 # ----------------------------
 # Create and Run Ansible Playbook
@@ -91,8 +91,9 @@ scp $SSH_KEY_PATH/$SSH_KEY_NAME.pub root@$PROXMOX_HOST:/root/$SSH_KEY_NAME.pub
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
 mkdir -p $ANSIBLE_FOLDER/playbooks
+SSH_KEY_CONTENT=$(cat $SSH_KEY_PATH.pub)
 cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
-- hosts: proxmox_host
+- hosts: proxmox
   become: true
   tasks:
     - name: Install sudo package
@@ -110,53 +111,40 @@ cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
     - name: Add Ansible SSH key
       authorized_key:
         user: $ANSIBLE_USER
-        key: "$(cat $SSH_KEY_PATH/$SSH_KEY_NAME.pub)"
+        key: $SSH_KEY_CONTENT
 
     - name: Add Ansible user to sudoers
       become: true
       copy:
-        src: $SUDOER_FILE
+        src: ../files/$SUDOER_FILE
         dest: /etc/sudoers.d/$ANSIBLE_USER
         owner: root
         group: root
         mode: 0440
+
+    - name: Create Ansible tmp directory
+      file:
+        path: "/home/$ANSIBLE_USER/.ansible/tmp"
+        state: directory
+        owner: $ANSIBLE_USER
+        group: $ANSIBLE_USER
+        mode: '0755'
+        recurse: yes
 EOF
 
 # Create sudoers configuration for Ansible user
 echo "Creating sudoers configuration for $ANSIBLE_USER..."
 mkdir -p $ANSIBLE_FOLDER/files
-cat <<EOF > $ANSIBLE_FOLDER/$SUDOER_FILE
+cat <<EOF > $ANSIBLE_FOLDER/files/$SUDOER_FILE
 $ANSIBLE_USER ALL=(ALL) NOPASSWD: ALL
 EOF
 
 # ----------------------------
 # Running the Playbook as root (First time)
 # ----------------------------
-
-# Check and modify Proxmox SSH configuration if the root access is denied
-#echo "Ensuring SSH configuration allows public key and password authentication..."
-#ssh root@$PROXMOX_HOST "sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config; \
-#sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config; \
-#sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config; \
-#sed -i 's/^#*AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config; \
-#systemctl restart ssh" || {
-#    echo "Failed to update SSH configuration. Check root access and try again."
-#    exit 1
-#}
-
-# Run the playbook to configure the Proxmox host (using root user), use --user=root -k for the first setup
 echo "Running Ansible playbook to onboard Proxmox host as root..."
-echo "ansible-playbook $ANSIBLE_FOLDER/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root"
-ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=root
-
-# ----------------------------
-# Test connection with Ansible user (after first playbook run)
-# ----------------------------
-
-# Test connection using the ansible user (SSH key authentication)
-echo "Testing connection with Ansible user..."
-ansible proxmox_host -m ping -i $ANSIBLE_FOLDER/$INVENTORY_FILE --user=$ANSIBLE_USER --private-key $SSH_KEY_PATH/$SSH_KEY_NAME
-
+echo "ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE"
+ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE
 
 # ----------------------------
 # Update the inventory file with the new Proxmox host details
@@ -167,12 +155,18 @@ echo "Updating the inventory file with the new created user and ssh key..."
 cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
 all:
   hosts:
-    proxmox_host:
+    proxmox:
       ansible_host: $PROXMOX_HOST
       ansible_user: $ANSIBLE_USER
-      ansible_ssh_private_key_file: $SSH_KEY_PATH/$SSH_KEY_NAME
+      ansible_ssh_private_key_file: $SSH_KEY_PATH
       ansible_python_interpreter: /usr/bin/python3
 EOF
+
+# ----------------------------
+# Test connection with Ansible user (after first playbook run)
+# ----------------------------
+echo "Testing connection with Ansible user..."
+ansible proxmox -m ping -i $ANSIBLE_FOLDER/$INVENTORY_FILE
 
 # ----------------------------
 # Finished
