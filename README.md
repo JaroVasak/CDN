@@ -131,7 +131,7 @@ Before you proceed with provisioning virtual machines, you need to create a user
    - Store these details securely in a secret vault file (e.g., `ansible/vars/ansible_secrets.yml`) that can be called by your Ansible playbooks. You can use `ansible-vault` to encrypt this information for added security. 
 
 ```yaml
-api_token_id: "ansible@pam!ansible-token"
+api_token_id: "ansible-token"
 api_token_secret: "<your-token-secret>"
 ```
 
