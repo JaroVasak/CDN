@@ -103,10 +103,16 @@
         qm cloudinit dump {{ vm_id }} user
         qm cloudinit dump {{ vm_id }} network
 
+    - name: Check if the VM is already a template
+      ansible.builtin.shell: |
+        qm config {{ vm_id }} | grep -i template
+      register: vm_template_check
+      ignore_errors: true
+
     - name: Convert the VM to a template
       ansible.builtin.shell: |
         qm template {{ vm_id }}
-      when: vm_check.rc != 0  # Skip if the VM is already a template
+      when: vm_template_check.rc != 0  # Only convert to template if not already a template
 
     - name: Clean up downloaded image file
       ansible.builtin.file:
