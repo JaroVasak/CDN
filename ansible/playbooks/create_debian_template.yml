@@ -78,9 +78,16 @@
       ansible.builtin.shell: |
         qm set {{ vm_id }} --ipconfig0 ip=dhcp
 
+    - name: Check if cloud-init drive already exists
+      ansible.builtin.shell: |
+        qm config {{ vm_id }} | grep ide2 || true
+      register: cloudinit_check
+      ignore_errors: yes
+
     - name: Create a cloud-init drive managed by Proxmox
       ansible.builtin.shell: |
         qm set {{ vm_id }} --ide2 {{ storage }}:cloudinit
+      when: cloudinit_check.rc != 0
 
     - name: Configure SSH access using the public key
       ansible.builtin.shell: |
