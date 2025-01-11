@@ -17,6 +17,28 @@
         chdir: /tmp
       when: not image_file.stat.exists  # Skip if the image already exists
 
+    - name: Check if the ZFS pool exists
+      ansible.builtin.shell: |
+        zpool list {{ storage }}
+      register: zfs_pool_check
+      ignore_errors: true
+
+    - name: Create ZFS pool if it doesn't exist
+      ansible.builtin.shell: |
+        zpool create {{ storage }} {{ disk_partition }}
+      when: zfs_pool_check.rc != 0
+
+    - name: Check if the storage is already added in Proxmox
+      ansible.builtin.shell: |
+        pvesm list {{ storage }}
+      register: proxmox_storage_check
+      ignore_errors: true
+
+    - name: Add the ZFS storage to Proxmox
+      ansible.builtin.shell: |
+        pvesm add zfspool {{ storage }} -pool {{ storage }} -content images,rootdir
+      when: proxmox_storage_check.rc != 0
+
     - name: Check if the VM already exists
       ansible.builtin.shell: |
         qm list | grep -w {{ vm_id }}
@@ -29,15 +51,15 @@
       when: vm_check.rc != 0  # Skip if the VM already exists
 
     - name: Check if the disk is already imported
-      ansible.builtin.shell: |
-        ls /var/lib/vz/images/{{ vm_id }}/vm-{{ vm_id }}-disk-0.raw
+      ansible.builtin.stat:
+        path: /var/lib/vz/images/{{ vm_id }}/vm-{{ vm_id }}-disk-0.raw
       register: disk_check
       ignore_errors: true
 
     - name: Import the raw disk into the ZFS storage
       ansible.builtin.shell: |
         qm importdisk {{ vm_id }} /tmp/{{ vm_image }} {{ storage }} -format {{ image_format }}
-      when: disk_check.rc != 0  # Skip if the disk is already imported
+      when: disk_check.stat.exists == false  # Skip if the disk is already imported
 
     - name: Attach the imported disk to the VM using VirtIO SCSI
       ansible.builtin.shell: |
@@ -50,7 +72,7 @@
     - name: Resize the disk to the specified size
       ansible.builtin.shell: |
         qm resize {{ vm_id }} scsi0 {{ disk_size }}
-      when: disk_check.rc != 0  # Resize only if the disk was newly imported
+      when: not disk_check.stat.exists  # Resize only if the disk was newly imported
 
     - name: Configure network for DHCP
       ansible.builtin.shell: |
