@@ -137,6 +137,7 @@ Before you proceed with provisioning virtual machines, you need to create a user
 ```yaml
 api_token_id: "ansible@pam!ansible-token"
 api_token_secret: "<your-token-secret>"
+```
 
 ### 7. Provision Virtual Machines
 Use the `provision_vms.yml` Ansible playbook to set up virtual machines for services like Ceph and Docker:
