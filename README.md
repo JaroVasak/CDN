@@ -128,11 +128,7 @@ Before you proceed with provisioning virtual machines, you need to create a user
 
 5. **Store Token Details**:
    - Copy the `Token ID` and `Secret` values.
-   - Store these details securely in a secret vault file that can be called by your Ansible playbooks. You can use `ansible-vault` to encrypt this information for added security.
-
-## Encrypting the Token Details Using Ansible Vault
-
-1. Create or edit your secrets file (e.g., `ansible/vars/ansible_secrets.yml`):
+   - Store these details securely in a secret vault file (e.g., `ansible/vars/ansible_secrets.yml`) that can be called by your Ansible playbooks. You can use `ansible-vault` to encrypt this information for added security. 
 
 ```yaml
 api_token_id: "ansible@pam!ansible-token"
