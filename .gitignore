@@ -1,3 +1,7 @@
+# Ignore VS Code directories
+.vscode
+
+# Ignore specific Ansible files
 ansible/vars/*.env
 ansible/!vars/bash.env.example
 
