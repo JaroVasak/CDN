@@ -7,6 +7,7 @@ memory: 2048
 bridge: "vmbr0"
 disk_size: "6G"
 storage: "jaro-zfs"
+disk_partition: /dev/sdb1
 ssh_key_path: "/root/.ssh/ansible-key.pub"
 image_format: raw
 vm_image: "debian-12-genericcloud-amd64.{{ image_format }}"
