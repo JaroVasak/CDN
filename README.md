@@ -90,7 +90,55 @@ ansible-playbook ansible/playbooks/create_debian_template.yml -i ansible/invento
 ```
 *Note*: Ensure that `/ansible/vars/provision_vms.yml` has the correct configuration before running this playbook.
 
-### 6. Provision Virtual Machines
+### 6. Create Proxmox API User Manually
+
+Before you proceed with provisioning virtual machines, you need to create a user in Proxmox that can manage Proxmox via REST API. Follow these steps to create the user and API token:
+
+## Steps to Create Proxmox User and API Token
+
+1. **Log in to Proxmox Web Interface**:
+   - Open your web browser and navigate to your Proxmox server (e.g., `https://<proxmox-ip>:8006`).
+   - Log in with your administrative credentials.
+
+2. **Add a New User**:
+   - Click on `Datacenter` in the left panel.
+   - Go to `Permissions` > `Users`.
+   - Click `Add` to create a new user.
+   - Fill in the details:
+     - **User**: Choose a username (e.g., `ansible@pam`).
+     - **Password**: Set a secure password for the user.
+   - Click `Add` to create the user.
+
+3. **Assign Permissions to the User**:
+   - Navigate to `Permissions` > `Add` > `User Permission`.
+   - Set the following:
+     - **Path**: `/` (Root directory).
+     - **User**: Select the user you just created (e.g., `ansible@pam`).
+     - **Role**: Select `Administrator`.
+   - Click `Add` to assign the permissions.
+
+4. **Create an API Token**:
+   - Go to `API Tokens` under the same `Permissions` menu.
+   - Click `Add` to create a new API token.
+   - Set the following:
+     - **User**: Select the user you just created (e.g., `ansible@pam`).
+     - **Token ID**: Set a token identifier (e.g., `ansible-token`).
+     - **Privilege Separation**: Uncheck this option.
+   - Click `Add` to generate the token.
+
+5. **Store Token Details**:
+   - Copy the `Token ID` and `Secret` values.
+   - Store these details securely in a secret vault file that can be called by your Ansible playbooks. You can use `ansible-vault` to encrypt this information for added security.
+
+## Encrypting the Token Details Using Ansible Vault
+
+1. Create or edit your secrets file (e.g., `ansible/vars/ansible_secrets.yml`):
+
+```yaml
+api_token_id: "ansible@pam!ansible-token"
+api_token_secret: "<your-token-secret>"
+
+### 7. Provision Virtual Machines
 Use the `provision_vms.yml` Ansible playbook to set up virtual machines for services like Ceph and Docker:
 
 ```bash
@@ -98,7 +146,7 @@ ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml
 ```
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
 
-### 7. Deploy Monitoring Stack
+### 8. Deploy Monitoring Stack
 Navigate to the monitoring directory and deploy the monitoring stack using Docker Compose:
  
 ```bash
