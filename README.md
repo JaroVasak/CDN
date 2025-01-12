@@ -23,6 +23,7 @@ CDN/
 │   │   ├── configure_docker.yml # Configure Docker environment
 │   │   ├── proxmox_onboard.yml   # Onboard Proxmox setup
 │   │   ├── create_debian_template.yml # Create a Debian template in proxmox
+│   │   ├── provision_network.yml   # Create a proxmox network used for created VMs
 │   │   └── provision_vms.yml    # Provision VMs for Ceph and Docker
 │   ├── vars/               # Variables for Ansible playbooks
 │   │   ├── ansible_secrets.yml  # Encrypted secrets (use Ansible Vault)
@@ -135,7 +136,15 @@ api_token_id: "ansible-token"
 api_token_secret: "<your-token-secret>"
 ```
 
-### 7. Provision Virtual Machines
+### 7. Provision Proxmox Network
+Use the `provision_network.yml` Ansible playbook to set up proxmox network used for virtual machines:
+
+```bash
+ansible-playbook ansible/playbooks/provision_network.yml -i ansible/inventory.yml
+```
+*Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
+
+### 8. Provision Virtual Machines
 Use the `provision_vms.yml` Ansible playbook to set up virtual machines for services like Ceph and Docker:
 
 ```bash
@@ -143,7 +152,7 @@ ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml
 ```
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
 
-### 8. Deploy Monitoring Stack
+### 9. Deploy Monitoring Stack
 Navigate to the monitoring directory and deploy the monitoring stack using Docker Compose:
  
 ```bash
