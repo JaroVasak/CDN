@@ -2,8 +2,8 @@
   become: false
   gather_facts: false
   vars_files:
-    - vars/ansible_secrets.yml  # File containing api_token_secret and api_token_id
-    - vars/provision_vms.yml
+    - ../vars/ansible_secrets.yml  # File containing api_token_secret and api_token_id
+    - ../vars/provision_vms.yml
 
   tasks:
     # Loop through and provision Ceph VMs using RBD storage
@@ -14,8 +14,10 @@
         api_token_secret: "{{ api_token_secret }}"
         api_host: "{{ ansible_host }}"
         node: "{{ node }}"
-        vmid: "{{ item.vmid }}"
         name: "{{ item.name }}"
+        clone: "{{ item.clone }}"
+        storage: "{{ item.storage }}"
+        full: true
         cores: 2
         memory: 2048
         net:
@@ -33,8 +35,10 @@
         api_token_secret: "{{ api_token_secret }}"
         api_host: "{{ ansible_host }}"
         node: "{{ node }}"
-        vmid: "{{ docker_vm.vmid }}"
         name: "{{ docker_vm.name }}"
+        clone: "{{ docker_vm.clone }}"
+        storage: "{{ docker_vm.storage }}"
+        full: true
         cores: 2
         memory: 2048
         net:
