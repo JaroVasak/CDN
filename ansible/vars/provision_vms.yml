@@ -22,14 +22,16 @@ node: "jaro"
 
 # Variables for Ceph VMs
 ceph_vms:
-  - { vmid: 101, name: "ceph-cluster1", storage: "ceph-storage" }
-  - { vmid: 102, name: "ceph-cluster2", storage: "ceph-storage" }
-  - { vmid: 103, name: "ceph-cluster3", storage: "ceph-storage" }
+  - { name: "ceph-cluster1", storage: "jaro-zfs", clone: "{{ vm_name }}" }
+  - { name: "ceph-cluster2", storage: "jaro-zfs", clone: "{{ vm_name }}" }
+  - { name: "ceph-cluster3", storage: "jaro-zfs", clone: "{{ vm_name }}" }
+
+
 
 # Variables for Docker VM
 docker_vm:
-  vmid: 104
   name: "docker-host"
-  storage: "local-zfs"  # Or "local-lvm" if you prefer LVM for Docker
+  storage: "jaro-zfs"  # Or "local-lvm" if you prefer LVM for Docker
   disk_size: 8G
-  template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+  clone: "{{ vm_name }}"  # Name of the template for Docker VM
+
