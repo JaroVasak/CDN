@@ -1,0 +1,30 @@
+- hosts: proxmox
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check if vmbr0 bridge exists
+      stat:
+        path: /etc/network/interfaces.d/vmbr0
+      register: result
+
+    - name: Create vmbr0 bridge if not exists
+      block:
+        - name: Ensure bridge vmbr0 exists in Proxmox network configuration
+          lineinfile:
+            path: /etc/network/interfaces
+            create: yes
+            line: |
+              auto vmbr0
+              iface vmbr0 inet static
+              address 192.168.1.1
+              netmask 255.255.255.0
+              bridge_ports eth0
+              bridge_stp off
+              bridge_fd 0
+          when: result.stat.exists == False
+
+    - name: Restart networking to apply bridge changes
+      service:
+        name: networking
+        state: restarted
+      when: result.stat.exists == False
