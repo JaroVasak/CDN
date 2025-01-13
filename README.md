@@ -14,29 +14,37 @@ chmod +x scripts/proxmox.sh scripts/ansible.sh
 ## Project Structure
 ```plaintext
 CDN/
-├── ansible/                # Ansible configuration and playbooks
-│   ├── ansible.cfg        # Configuration file for Ansible
-│   ├── files/             # Supporting files (e.g., sudoer_ansible)
+├── ansible/               # Ansible configurations and playbooks
+│   ├── ansible.cfg        # Ansible configuration file
+│   ├── files/             # Supporting files (e.g., sudoers configuration for Ansible)
 │   ├── inventory.yml      # Ansible inventory file
 │   ├── playbooks/         # Playbooks for provisioning and configuring services
-│   │   ├── configure_ceph.yml  # Configure Ceph cluster
-│   │   ├── configure_docker.yml # Configure Docker environment
-│   │   ├── proxmox_onboard.yml   # Onboard Proxmox setup
-│   │   ├── create_debian_template.yml # Create a Debian template in proxmox
-│   │   ├── provision_network.yml   # Create a proxmox network used for created VMs
-│   │   └── provision_vms.yml    # Provision VMs for Ceph and Docker
+│   │   ├── configure_ceph.yml       # Playbook to configure the Ceph cluster
+│   │   ├── configure_docker.yml     # Playbook to configure the Docker environment
+│   │   ├── proxmox_onboard.yml      # Playbook to onboard Proxmox setup
+│   │   ├── create_debian_template.yml # Playbook to create a Debian template in Proxmox
+│   │   ├── provision_network.yml    # Playbook to create a Proxmox network for VMs
+│   │   └── provision_vms.yml        # Playbook to provision VMs for Ceph and Docker
 │   ├── vars/               # Variables for Ansible playbooks
 │   │   ├── ansible_secrets.yml  # Encrypted secrets (use Ansible Vault)
 │   │   └── provision_vms.yml    # Variables for VM provisioning
-├── docker/                 # Docker configuration for services
+├── docker/                 # Docker configurations for services
 │   ├── monitoring/         # Monitoring setup
+│   │   ├── grafana/        # Grafana configuration
+│   │   │   ├── dashboards  # Prepared dashboards
+│   │   │   │   └── node-exporter-full.json  # Node Exporter Full dashboard JSON
+│   │   │   └── provisioning # Provisioning resources
+│   │   │       ├── dashboards  # Dashboard provisioning resources
+│   │   │       │   └── dashboards.yml # Dashboard configuration
+│   │   │       └── datasources # Datasource provisioning resources
+│   │   │           └── datasources.yml # Datasource configuration
 │   │   ├── prometheus/     # Prometheus configuration
-│   │   │   └── prometheus.yml  # Prometheus scrape configuration
-│   │   └── docker-compose.yml  # Docker Compose file for monitoring stack
+│   │   │   └── prometheus.yml   # Prometheus scrape configuration
+│   │   └── docker-compose.yml   # Docker Compose file for monitoring stack
 ├── scripts/                # Bash scripts for initial setup tasks
-│   ├── ansible.sh          # Install and configure Ansible
-│   ├── proxmox.sh          # Install and configure Proxmox
-├── .gitignore              # Git ignore file for excluding sensitive data
+│   ├── ansible.sh          # Script to install and configure Ansible
+│   └── proxmox.sh          # Script to install and configure Proxmox
+├── .gitignore              # Git ignore file to exclude sensitive data
 └── README.md               # Project documentation
 ```
 
