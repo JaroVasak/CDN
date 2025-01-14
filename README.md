@@ -25,22 +25,22 @@ CDN/
 │   │   ├── create_debian_template.yml # Playbook to create a Debian template in Proxmox
 │   │   ├── provision_network.yml    # Playbook to create a Proxmox network for VMs
 │   │   └── provision_vms.yml        # Playbook to provision VMs for Ceph and Docker
-│   ├── vars/               # Variables for Ansible playbooks
+│   ├── vars/                    # Variables for Ansible playbooks
 │   │   ├── ansible_secrets.yml  # Encrypted secrets (use Ansible Vault)
 │   │   └── provision_vms.yml    # Variables for VM provisioning
-├── docker/                 # Docker configurations for services
-│   ├── monitoring/         # Monitoring setup
-│   │   ├── grafana/        # Grafana configuration
-│   │   │   ├── dashboards  # Prepared dashboards
+├── docker/                      # Docker configurations for services
+│   ├── monitoring/              # Monitoring setup
+│   │   ├── grafana/             # Grafana configuration
+│   │   │   ├── dashboards/      # Prepared dashboards
 │   │   │   │   └── node-exporter-full.json  # Node Exporter Full dashboard JSON
-│   │   │   └── provisioning # Provisioning resources
-│   │   │       ├── dashboards  # Dashboard provisioning resources
-│   │   │       │   └── dashboards.yml # Dashboard configuration
-│   │   │       └── datasources # Datasource provisioning resources
+│   │   │   └── provisioning/           # Provisioning resources
+│   │   │       ├── dashboards/         # Dashboard provisioning resources
+│   │   │       │   └── dashboards.yml  # Dashboard configuration
+│   │   │       └── datasources/        # Datasource provisioning resources
 │   │   │           └── datasources.yml # Datasource configuration
-│   │   ├── prometheus/     # Prometheus configuration
-│   │   │   └── prometheus.yml   # Prometheus scrape configuration
-│   │   └── docker-compose.yml   # Docker Compose file for monitoring stack
+│   │   ├── prometheus/                 # Prometheus configuration
+│   │   │   └── prometheus.yml          # Prometheus scrape configuration
+│   │   └── docker-compose.yml          # Docker Compose file for monitoring stack
 ├── scripts/                # Bash scripts for initial setup tasks
 │   ├── ansible.sh          # Script to install and configure Ansible
 │   └── proxmox.sh          # Script to install and configure Proxmox
