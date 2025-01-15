@@ -50,3 +50,18 @@
         name: ansible
         groups: docker
         append: yes
+
+    - name: Copy docker-compose directory to the Docker VM
+      synchronize:
+        src: ../docker/monitoring/  
+        dest: /opt/docker/monitoring/
+        mode: push
+        recursive: yes
+        owner: root #consider changing it to another user, e.g.ansible, or docker
+        group: root #consider changing it to another user, e.g.ansible, or docker
+
+    - name: Run Docker Compose
+      command: "docker-compose -f /opt/docker/monitoring/docker-compose.yml up -d"
+      args:
+        chdir: /opt/docker/monitoring/
+
