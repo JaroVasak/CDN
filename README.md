@@ -1,4 +1,4 @@
-# Private-Cloud-CDN-LAb
+# Private-Cloud-CDN-LAB
 
 ## Overview
 The goal of this project is to create a fully automated private cloud infrastructure that mirrors a real-world use case, such as a Content Delivery Network (CDN). The infrastructure leverages Proxmox as the virtualization platform, Ansible as the configuration management tool, and Bash for automating the setup of prerequisites. The operating system used for both Proxmox and the cloud template is Debian.
