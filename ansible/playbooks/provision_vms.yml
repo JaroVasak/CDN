@@ -26,6 +26,16 @@
         kvm: false
         state: started
       loop: "{{ ceph_vms }}"
+      register: ceph_vm_creation
+
+    # Add Ceph VMs to dynamic inventory
+    - name: Add Ceph VM to the inventory dynamically
+      add_host:
+        name: "{{ item.item.name }}"
+        groups: ceph
+        ansible_host: "{{ item.instance.ip }}"
+      loop: "{{ ceph_vm_creation.results }}"
+      when: ceph_vm_creation is defined
 
     # Provision Docker VM using ZFS or LVM storage (choose one)
     - name: Provision Docker VM
@@ -46,3 +56,22 @@
         ostype: l26
         kvm: false
         state: started
+      register: docker_vm_creation
+
+    - name: Wait for the VM to come up (using SSH)
+      wait_for:
+        host: "{{ docker_vm_creation.instance.ip }}"
+        port: 22
+        state: started
+        delay: 10
+        timeout: 300
+
+    - name: Add the VM to the docker group dynamically
+      add_host:
+        name: "docker-vm"
+        groups: docker
+        ansible_host: "{{ docker_vm_creation.instance.ip }}"
+    
+    - name: Configure Docker on VMs
+      include: configure_docker.yml
+
