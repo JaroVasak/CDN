@@ -1,15 +1,24 @@
-# CDN Infrastructure Setup
+# Private-Cloud-CDN-LAb
 
 ## Overview
-This project automates the setup of a CDN infrastructure using Proxmox, Debian templates, Ansible, and Docker. It includes scripts and playbooks to configure Proxmox, create Debian templates, provision VMs, and deploy monitoring tools like Prometheus and Grafana.
+The goal of this project is to create a fully automated private cloud infrastructure that mirrors a real-world use case, such as a Content Delivery Network (CDN). The infrastructure leverages Proxmox as the virtualization platform, Ansible as the configuration management tool, and Bash for automating the setup of prerequisites. The operating system used for both Proxmox and the cloud template is Debian.
+
+This lab environment includes the following services:
+- Prometheus and Grafana for monitoring and visualizing system metrics.
+- Two Nginx instances used as a reverse proxy, caching layer, and web server.
+- Ceph as a distributed storage cluster.
+
+*Note*: This project is still in progress, and the following components may not be fully functional:
+- Provisioning of Nginx instances 
+- Ceph cluster setup
 
 ## Prerequisites
 - A Debian-based host machine capable of running Proxmox.
-- Scripts included in this project will automatically install necessary tools like Ansible and SSH. Make the scripts executable by running:
+- Scripts included in this project will automatically install necessary tools like Ansible and SSH. To make the scripts executable, run the following command:
 ```bash
 chmod +x scripts/proxmox.sh scripts/ansible.sh
 ```
-- Basic understanding of Bash scripting and Ansible playbooks is helpful but not mandatory.
+- Ansible version >= 2.17 is recommended for compatibility with the provided playbooks.
 
 ## Project Structure
 ```plaintext
@@ -54,7 +63,7 @@ CDN/
 Before running any scripts, navigate to the CDN folder where the scripts and configuration files are located:
 
 ```bash
-cd /path/to/CDN
+cd /path/to/project
 ```
 
 ### 2. Update Configuration Variables
@@ -158,10 +167,15 @@ Use the `provision_vms.yml` Ansible playbook to set up virtual machines for serv
 ```bash
 ansible-playbook ansible/playbooks/provision_vms.yml -i ansible/inventory.yml
 ```
+
+This playbook will:
+- Provision Ceph VMs and add them dynamically to the inventory.
+- Provision a Docker VM, configure Docker on it and add it to the inventory as well.
+
 *Note*: Run this playbook with appropriate permissions, such as `sudo`, if needed.
 
 ### 9. Deploy Monitoring Stack
-Navigate to the monitoring directory and deploy the monitoring stack using Docker Compose:
+The monitoring stack (Prometheus and Grafana) should already be deployed as part of the provision_vms.yml playbook. If for any reason the stack isn't set up, follow these steps to deploy it manually:
  
 ```bash
 cd docker/monitoring
@@ -174,6 +188,8 @@ Prometheus (port 9090)
 Grafana (port 3000)
 Node Exporter
 cAdvisor (port 8080)
+
+Important: You will need to copy the necessary files to the docker VMs and run the stack there (instead of running it on the local, or proxmox host machine). This can be done as part of the playbook execution (configure_docker.yml).
 
 *Note*: Default Grafana credentials are set to admin / admin. Update the environment variables in the docker-compose.yml file if needed.
 
@@ -227,12 +243,3 @@ chmod +x scripts/proxmox.sh scripts/ansible.sh
 - Encrypt sensitive files using `ansible-vault`.
 - Store SSH keys securely and set permissions with `chmod 600 ~/.ssh/ansible-key`.
 - Ensure scripts and playbooks are tested in a non-production environment before full deployment.
-
-## Notes
-- Ensure all dependencies (e.g., Bash, SSH, Ansible) are installed before running scripts.
-- Review scripts and playbooks to align them with your environment and needs.
-- Always test in a non-production environment first.
-
-## License
-This project is licensed under the MIT License. See `LICENSE` for more details.
-
