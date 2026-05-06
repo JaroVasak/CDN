@@ -31,8 +31,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
@@ -44,8 +44,10 @@ services:
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
-    networks: 
+    networks:
       - monitoring
+    volumes:
+      - /:/host:ro,rslave
     command:
       - '--path.rootfs=/host'
     pid: host
