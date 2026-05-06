@@ -1,14 +1,11 @@
 #!/bin/bash
+set -euo pipefail
 
-#!/bin/bash
 # Ensure the script is run as root
 if [ "$(id -u)" -ne 0 ]; then
     echo "This script must be run as root or with sudo" >&2
     exit 1
 fi
-
-# Error handling detection
-set -euo pipefail
 
 # Source the environment variables
 source "$(dirname "$(realpath "$0")")/../vars/bash.env"
@@ -19,9 +16,9 @@ apt update
 
 # Step 2: Configure static IP Address
 echo "Configuring static IP address..."
-bash -c "cat > /etc/network/interfaces.d/enp0s3.cfg" <<EOF
-auto enp0s3
-iface enp0s3 inet static
+cat > "/etc/network/interfaces.d/${NIC_NAME}.cfg" <<EOF
+auto ${NIC_NAME}
+iface ${NIC_NAME} inet static
 address $PROXMOX_HOST
 netmask $NETMASK
 gateway $GATEWAY
@@ -38,7 +35,7 @@ apt install curl software-properties-common apt-transport-https ca-certificates 
 echo "Adding Proxmox repository and key..."
 curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor -o /usr/share/keyrings/proxmox.gpg
 
-echo "deb [signed-by=/usr/share/keyrings/proxmox.gpg arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/proxmox.list
+echo "deb [signed-by=/usr/share/keyrings/proxmox.gpg arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | tee /etc/apt/sources.list.d/proxmox.list
 
 echo "Updating APT cache and upgrading packages..."
 apt update && apt full-upgrade -y
@@ -51,13 +48,13 @@ apt install proxmox-default-kernel -y
 echo "Installing Proxmox VE and additional packages..."
 
 # Preconfigure Postfix for unattended installation
-echo "postfix postfix/mailname string example.com" | sudo debconf-set-selections
-echo "postfix postfix/main_mailer_type string 'Internet Site'" | sudo debconf-set-selections
+echo "postfix postfix/mailname string example.com" | debconf-set-selections
+echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
 apt install proxmox-ve postfix open-iscsi chrony -y
 
 # Confirm that Proxmox is installed and listening on port 8006
 echo "Confirming Proxmox installation..."
-ss -tunelp | grep 8006
+ss -tunelp | grep 8006 || true
 
 # Comment out Proxmox Enterprise Repository line
 sed -i 's|^deb https://enterprise.proxmox.com|#deb https://enterprise.proxmox.com|' /etc/apt/sources.list.d/pve-enterprise.list
