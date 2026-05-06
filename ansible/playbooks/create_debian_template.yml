@@ -51,15 +51,16 @@
       when: vm_check.rc != 0  # Skip if the VM already exists
 
     - name: Check if the disk is already imported
-      ansible.builtin.stat:
-        path: /var/lib/vz/images/{{ vm_id }}/vm-{{ vm_id }}-disk-0.raw
+      ansible.builtin.shell: |
+        qm config {{ vm_id }} | grep -q scsi0
       register: disk_check
-      ignore_errors: true
+      failed_when: false
+      changed_when: false
 
     - name: Import the raw disk into the ZFS storage
       ansible.builtin.shell: |
         qm importdisk {{ vm_id }} /tmp/{{ vm_image }} {{ storage }} -format {{ image_format }}
-      when: disk_check.stat.exists == false  # Skip if the disk is already imported
+      when: disk_check.rc != 0
 
     - name: Attach the imported disk to the VM using VirtIO SCSI
       ansible.builtin.shell: |
@@ -72,7 +73,7 @@
     - name: Resize the disk to the specified size
       ansible.builtin.shell: |
         qm resize {{ vm_id }} scsi0 {{ disk_size }}
-      when: not disk_check.stat.exists  # Resize only if the disk was newly imported
+      when: disk_check.rc != 0
 
     - name: Configure network for DHCP
       ansible.builtin.shell: |
@@ -80,9 +81,10 @@
 
     - name: Check if cloud-init drive already exists
       ansible.builtin.shell: |
-        qm config {{ vm_id }} | grep ide2 || true
+        qm config {{ vm_id }} | grep ide2
       register: cloudinit_check
-      ignore_errors: yes
+      failed_when: false
+      changed_when: false
 
     - name: Create a cloud-init drive managed by Proxmox
       ansible.builtin.shell: |
