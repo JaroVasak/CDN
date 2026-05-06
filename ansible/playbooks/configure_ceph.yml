@@ -1,49 +1,47 @@
 - name: Configure Ceph Cluster
-  hosts: ceph_nodes
+  hosts: ceph
   become: true
   vars:
-    ceph_release: "octopus"
+    ceph_release: "reef"
   tasks:
-    - name: Install Ceph packages
-      apt:
-        name: "ceph, ceph-common, ceph-fs-common"
+    - name: Add Ceph GPG key
+      apt_key:
+        url: "https://download.ceph.com/keys/release.asc"
         state: present
-        update_cache: yes
 
     - name: Configure Ceph repository
       apt_repository:
-        repo: "deb http://download.ceph.com/debian-{{ ceph_release }}/ {{ ansible_lsb.codename }} main"
+        repo: "deb https://download.ceph.com/debian-{{ ceph_release }}/ {{ ansible_lsb.codename }} main"
         state: present
 
-    - name: Install Ceph monitor and OSD
-      command: ceph-deploy new {{ inventory_hostname }}
+    - name: Install cephadm prerequisites
+      apt:
+        name:
+          - curl
+          - gnupg2
+          - python3
+          - lvm2
+        state: present
+        update_cache: yes
+
+    - name: Install cephadm
+      apt:
+        name: cephadm
+        state: present
+
+    - name: Bootstrap Ceph cluster on first monitor node
+      command: cephadm bootstrap --mon-ip {{ ansible_host }} --initial-dashboard-user admin --initial-dashboard-password changeme
       args:
         creates: /etc/ceph/ceph.conf
+      when: inventory_hostname == groups['ceph'][0]
 
-    - name: Deploy the monitor
-      command: ceph-deploy mon create-initial
-      args:
-        chdir: /root
+    - name: Add additional nodes to cluster
+      command: cephadm shell -- ceph orch host add {{ item }}
+      loop: "{{ groups['ceph'][1:] }}"
+      when: inventory_hostname == groups['ceph'][0]
 
-    - name: Deploy the OSDs
-      command: ceph-deploy osd create --data /dev/sdb {{ inventory_hostname }}
-      args:
-        chdir: /root
+    - name: Deploy OSDs on all nodes
+      command: cephadm shell -- ceph orch apply osd --all-available-devices
+      when: inventory_hostname == groups['ceph'][0]
 
-    - name: Copy ceph config to all nodes
-      copy:
-        src: /etc/ceph/ceph.conf
-        dest: /etc/ceph/ceph.conf
-        owner: root
-        group: root
-        mode: 0644
-
-    - name: Start Ceph services
-      service:
-        name: ceph
-        state: started
-        enabled: true
-
-    - name: Ensure Prometheus integration
-      # Task to set up Prometheus metrics endpoint for monitoring
-      # Add configurations specific to Prometheus integration
+    # TODO: configure Prometheus metrics endpoint via cephadm dashboard module
