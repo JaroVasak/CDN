@@ -1,9 +1,9 @@
 # Ignore VS Code directories
 .vscode
 
-# Ignore specific Ansible files
-ansible/vars/*.env
-ansible/!vars/bash.env.example
+# Ignore env files with secrets
+vars/*.env
+!vars/bash.env.example
 
 # Ignore Ansible vault file
 ansible/vars/ansible_secrets.yml
