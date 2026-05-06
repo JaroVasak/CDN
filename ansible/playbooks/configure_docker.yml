@@ -2,29 +2,30 @@
   hosts: docker
   become: true
   vars:
-    docker_compose_version: "2.29.7"  # Replace with the desired version
+    docker_compose_version: "2.29.7"
   tasks:
     - name: Install required dependencies
       apt:
-        name: "{{ item }}"
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
         state: present
-      with_items:
-        - apt-transport-https
-        - ca-certificates
-        - curl
-        - software-properties-common
-        - python3-pip
-        - virtualenv
-        - python3-setuptools
+        update_cache: yes
 
     - name: Add Docker's official GPG key
-      apt_key:
+      get_url:
         url: https://download.docker.com/linux/debian/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
 
     - name: Add Docker repository
       apt_repository:
-        repo: 'deb [arch=amd64] https://download.docker.com/linux/debian/dists/bookworm/stable/'
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
         state: present
 
     - name: Install Docker
@@ -35,7 +36,7 @@
 
     - name: Install Docker Compose
       get_url:
-        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-$(uname -s)-$(uname -m)"
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}"
         dest: "/usr/local/bin/docker-compose"
         mode: 'u+x'
 
