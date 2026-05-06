@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Ensure the script is run as root
 if [ "$(id -u)" -ne 0 ]; then
@@ -40,7 +41,7 @@ ansible --version
 
 # Create an inventory file for Ansible to define the Proxmox host
 echo "Creating Ansible inventory file..."
-cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
+cat <<EOF > "$ANSIBLE_FOLDER/$INVENTORY_FILE"
 all:
   hosts:
     proxmox:
@@ -52,7 +53,7 @@ EOF
 
 # Configure Ansible settings to avoid warnings and key checking
 echo "Configuring Ansible settings..."
-cat <<EOF > $ANSIBLE_FOLDER/$ANSIBLE_CONFIG
+cat <<EOF > "$ANSIBLE_FOLDER/$ANSIBLE_CONFIG"
 [defaults]
 interpreter_python=auto_silent
 host_key_checking=False
@@ -63,22 +64,22 @@ EOF
 # ----------------------------
 
 # Ensure the .ssh directory exists
-if [ ! -d $SSH_KEY_FOLDER ]; then
+if [ ! -d "$SSH_KEY_FOLDER" ]; then
     echo "Creating .ssh directory for $ANSIBLE_USER at $SSH_KEY_FOLDER..."
-    mkdir -p $SSH_KEY_FOLDER
+    mkdir -p "$SSH_KEY_FOLDER"
 fi
 
 # Generate SSH key for Ansible user if not already exists
-if [ ! -f $SSH_KEY_PATH ]; then
+if [ ! -f "$SSH_KEY_PATH" ]; then
     echo "Generating SSH key for Ansible user..."
-    ssh-keygen -t ed25519 -f $SSH_KEY_PATH -N "" -C "$ANSIBLE_USER@$PROXMOX_HOST"
+    ssh-keygen -t ed25519 -f "$SSH_KEY_PATH" -N "" -C "$ANSIBLE_USER@$PROXMOX_HOST"
     echo "SSH key generated at $SSH_KEY_PATH"
 else
     echo "SSH key already exists at $SSH_KEY_PATH"
 fi
 
 # Copying the public key to Proxmox Host
-ssh-copy-id -i $SSH_KEY_PATH.pub root@$PROXMOX_HOST
+ssh-copy-id -i "${SSH_KEY_PATH}.pub" "root@${PROXMOX_HOST}"
 
 # ----------------------------
 # Create and Run Ansible Playbook
@@ -86,8 +87,8 @@ ssh-copy-id -i $SSH_KEY_PATH.pub root@$PROXMOX_HOST
 
 # Create Ansible playbook to onboard Proxmox host
 echo "Creating Ansible playbook..."
-SSH_KEY_CONTENT=$(cat $SSH_KEY_PATH.pub)
-cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
+SSH_KEY_CONTENT=$(cat "${SSH_KEY_PATH}.pub")
+cat <<EOF > "$ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD"
 - hosts: proxmox
   become: true
   tasks:
@@ -116,6 +117,7 @@ cat <<EOF > $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD
         owner: root
         group: root
         mode: 0440
+        validate: visudo -cf %s
 
     - name: Create Ansible tmp directory
       file:
@@ -129,8 +131,8 @@ EOF
 
 # Create sudoers configuration for Ansible user
 echo "Creating sudoers configuration for $ANSIBLE_USER..."
-mkdir -p $ANSIBLE_FOLDER/files
-cat <<EOF > $ANSIBLE_FOLDER/files/$SUDOER_FILE
+mkdir -p "$ANSIBLE_FOLDER/files"
+cat <<EOF > "$ANSIBLE_FOLDER/files/$SUDOER_FILE"
 $ANSIBLE_USER ALL=(ALL) NOPASSWD: ALL
 EOF
 
@@ -138,8 +140,8 @@ EOF
 # Running the Playbook as root (First time)
 # ----------------------------
 echo "Running Ansible playbook to onboard Proxmox host as root..."
-echo "ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE"
-ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$INVENTORY_FILE
+echo "ansible-playbook "$ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD" -i "$ANSIBLE_FOLDER/$INVENTORY_FILE""
+ansible-playbook "$ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD" -i "$ANSIBLE_FOLDER/$INVENTORY_FILE"
 
 # ----------------------------
 # Update the inventory file with the new Proxmox host details
@@ -147,7 +149,7 @@ ansible-playbook $ANSIBLE_FOLDER/playbooks/$PROXMOX_ONBOARD -i $ANSIBLE_FOLDER/$
 
 # Create an inventory file for Ansible to define the Proxmox host
 echo "Updating the inventory file with the new created user and ssh key..."
-cat <<EOF > $ANSIBLE_FOLDER/$INVENTORY_FILE
+cat <<EOF > "$ANSIBLE_FOLDER/$INVENTORY_FILE"
 all:
   hosts:
     proxmox:
@@ -161,7 +163,7 @@ EOF
 # Test connection with Ansible user (after first playbook run)
 # ----------------------------
 echo "Testing connection with Ansible user..."
-ansible proxmox -m ping -i $ANSIBLE_FOLDER/$INVENTORY_FILE
+ansible proxmox -m ping -i "$ANSIBLE_FOLDER/$INVENTORY_FILE"
 
 # ----------------------------
 # Finished
